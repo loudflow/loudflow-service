@@ -17,21 +17,21 @@ package com.loudflow.model.impl
 
 import java.util.UUID
 
-import scala.concurrent.{Future, ExecutionContext}
+import scala.concurrent.{ExecutionContext, Future}
 import akka.{Done, NotUsed}
 import akka.stream.scaladsl.Flow
-import com.loudflow.domain.model.{ModelType, ModelChange, BatchAction}
-import com.loudflow.simulation.api.SimulationService
+import com.loudflow.domain.model.{ModelChange, ModelType}
 import com.lightbend.lagom.scaladsl.api.ServiceCall
 import com.lightbend.lagom.scaladsl.api.broker.Topic
 import com.lightbend.lagom.scaladsl.broker.TopicProducer
-import com.lightbend.lagom.scaladsl.persistence.{EventStreamElement, PersistentEntityRegistry, PersistentEntityRef}
+import com.lightbend.lagom.scaladsl.persistence.{EventStreamElement, PersistentEntityRef, PersistentEntityRegistry}
 import com.lightbend.lagom.scaladsl.server.ServerServiceCall
 import com.loudflow.api.{CommandResponse, HealthResponse}
 import com.wix.accord.validate
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import com.loudflow.model.api.{ReadModelResponse, ModelService, CreateModelRequest}
+import com.loudflow.model.api.{CreateModelRequest, ModelService, ReadModelResponse}
+import com.loudflow.simulation.api.SimulationService
 
 class ModelServiceImpl(simulationService: SimulationService, persistentEntityRegistry: PersistentEntityRegistry)(implicit ec: ExecutionContext) extends ModelService {
 

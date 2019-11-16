@@ -31,8 +31,10 @@ trait Model[S <: ModelState] {
   def remove(entityId: String): StateMonad[S, Unit]
 
   def allEntities(state: S): Set[Entity]
+  def getEntity(entityId: String, state: S): Option[Entity]
   def findEntities(entityType: EntityType.Value, kind: String, state: S): Set[Entity]
-  def randomPosition(e: Entity, r: Random, state: S): Option[Position]
+  def randomAddablePosition(e: Entity, r: Random, state: S): Option[Position]
+  def randomMovablePosition(entityId: String, r: Random, state: S): Option[Position]
 
 }
 

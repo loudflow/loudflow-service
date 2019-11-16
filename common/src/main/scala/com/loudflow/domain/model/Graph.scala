@@ -22,7 +22,7 @@ import cats.data.{State => StateMonad}
 import scalax.collection.mutable.{Graph => ScalaGraph}
 import scalax.collection.GraphPredef.EdgeLikeIn
 import scalax.collection.edge.Implicits._
-import com.loudflow.domain.model.Graph.G
+import com.loudflow.domain.model.Graph.{G, allEntities}
 
 import scala.util.Random
 
@@ -77,10 +77,17 @@ trait Graph extends Model[GraphState] {
 
   def allEntities(state: GraphState): Set[Entity] = Graph.allEntities(state.graph)
 
+  def getEntity(entityId: String, state: GraphState): Option[Entity] = Graph.allEntities(state.graph).find(_.id == entityId)
+
   def findEntities(entityType: EntityType.Value, kind: String, state: GraphState): Set[Entity] = Graph.findEntities(entityType, kind, state.graph)
 
-  def randomPosition(e: Entity, r: Random, state: GraphState): Option[Position] =
+  def randomAddablePosition(e: Entity, r: Random, state: GraphState): Option[Position] =
     r.shuffle(Graph.allPositions(state.graph)).find(p => e.shiftCluster(p).forall(isAddable(e, _, state)))
+
+  def randomMovablePosition(entityId: String, r: Random, state: GraphState): Option[Position] =
+    getEntity(entityId, state).flatMap(entity => {
+      r.shuffle(Graph.allPositions(state.graph)).find(p => entity.shiftCluster(p).forall(p => isAddable(entity, p, state) && isMovable(entity, p, state)))
+    })
 
   def display(mapper: Option[Entity] => String, state: GraphState): IO[Unit] =
     state.gridProperties match {

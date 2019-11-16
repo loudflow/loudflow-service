@@ -14,7 +14,7 @@ val scalaGraphJson = "org.scala-graph" %% "graph-json" % "1.12.1"
 val scalaTest = "org.scalatest" %% "scalatest" % "3.0.4" % Test
 
 lazy val `loudflow` = (project in file("."))
-  .aggregate(`common`, `simulation-api`, `simulation-impl`, `model-api`, `model-impl`)
+  .aggregate(`common`, `agent-api`, `agent-impl`, `model-api`, `model-impl`, `simulation-api`, `simulation-impl`)
 
 lazy val `common` = (project in file("common"))
   .settings(
@@ -29,6 +29,30 @@ lazy val `common` = (project in file("common"))
       scalaTest
     )
   )
+
+lazy val `agent-api` = (project in file("agent-api"))
+  .settings(
+    libraryDependencies ++= Seq(
+      lagomScaladslApi,
+      accord
+    )
+  )
+  .dependsOn(`common`)
+
+lazy val `agent-impl` = (project in file("agent-impl"))
+  .enablePlugins(LagomScala)
+  .settings(
+    libraryDependencies ++= Seq(
+      lagomScaladslPersistenceCassandra,
+      lagomScaladslKafkaBroker,
+      lagomScaladslTestKit,
+      macwire,
+      cats,
+      scalaTest
+    )
+  )
+  .settings(lagomForkedTestSettings)
+  .dependsOn(`common`, `agent-api`, `model-api`)
 
 lazy val `model-api` = (project in file("model-api"))
   .settings(
@@ -77,4 +101,3 @@ lazy val `simulation-impl` = (project in file("simulation-impl"))
   )
   .settings(lagomForkedTestSettings)
   .dependsOn(`common`, `simulation-api`, `model-api`)
-

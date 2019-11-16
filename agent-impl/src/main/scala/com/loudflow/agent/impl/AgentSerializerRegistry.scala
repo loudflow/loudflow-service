@@ -13,29 +13,29 @@
    file 'LICENSE.txt', which is part of this source code package.
 
 ************************************************************************ */
-package com.loudflow.simulation.impl
+package com.loudflow.agent.impl
 
 import scala.collection.immutable.Seq
 import com.lightbend.lagom.scaladsl.playjson.{JsonSerializer, JsonSerializerRegistry}
 
-object SimulationSerializerRegistry extends JsonSerializerRegistry {
+object AgentSerializerRegistry extends JsonSerializerRegistry {
   override def serializers: Seq[JsonSerializer[_]] = Seq(
-    JsonSerializer[CreateSimulation],
-    JsonSerializer[DestroySimulation],
-    JsonSerializer[ReadSimulation],
-    JsonSerializer[StartSimulation],
-    JsonSerializer[StopSimulation],
-    JsonSerializer[PauseSimulation],
-    JsonSerializer[ResumeSimulation],
-    JsonSerializer[AdvanceSimulation],
-    JsonSerializer[UpdateSimulation],
-    JsonSerializer[SimulationCreated],
-    JsonSerializer[SimulationDestroyed],
-    JsonSerializer[SimulationStarted],
-    JsonSerializer[SimulationStopped],
-    JsonSerializer[SimulationPaused],
-    JsonSerializer[SimulationResumed],
-    JsonSerializer[SimulationAdvanced],
-    JsonSerializer[SimulationUpdated]
+    JsonSerializer[CreateAgent],
+    JsonSerializer[DestroyAgent],
+    JsonSerializer[ReadAgent],
+    JsonSerializer[StartAgent],
+    JsonSerializer[StopAgent],
+    JsonSerializer[PauseAgent],
+    JsonSerializer[ResumeAgent],
+    JsonSerializer[AdvanceAgent],
+    JsonSerializer[UpdateAgent],
+    JsonSerializer[AgentCreated],
+    JsonSerializer[AgentDestroyed],
+    JsonSerializer[AgentStarted],
+    JsonSerializer[AgentStopped],
+    JsonSerializer[AgentPaused],
+    JsonSerializer[AgentResumed],
+    JsonSerializer[AgentAdvanced],
+    JsonSerializer[AgentUpdated]
   )
 }

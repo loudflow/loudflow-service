@@ -27,7 +27,7 @@ trait GraphSimulation extends Simulation[GraphState] with Graph {
      PUBLIC METHODS
   ************************************************************************ */
 
-  def create(random: Random, state: GraphState, traceId: String): (List[ModelAction], Int) = {
+  def create(random: Random, state: GraphState, traceId: String): (Seq[ModelAction], Int) = {
     val actions = List(CreateModelAction(state.id, traceId, state.properties))
     if (state.properties.entities.nonEmpty)
       addEntityActions(state.properties.entities.toList, random, actions, calls = 0, state, traceId)
@@ -49,7 +49,7 @@ trait GraphSimulation extends Simulation[GraphState] with Graph {
     case _: EntityPickedChange => state
   }
 
-  def advance(time: Long, random: Random, state: GraphState, traceId: String): (List[ModelAction], Int) = {
+  def advance(time: Long, random: Random, state: GraphState, traceId: String): (Seq[ModelAction], Int) = {
     val actions = new ListBuffer[ModelAction]()
     var calls: Int = 0
     state.properties.entities.foreach(entityProperties => {
@@ -116,7 +116,7 @@ trait GraphSimulation extends Simulation[GraphState] with Graph {
     })
     val options = EntityOptions(cluster, group, lifeSpan, score)
     val entity = Entity(entityProperties.entityType, entityProperties.kind, options)
-    val optionsWithPosition = EntityOptions(cluster, group, lifeSpan, score, randomPosition(entity, random, state))
+    val optionsWithPosition = EntityOptions(cluster, group, lifeSpan, score, randomAddablePosition(entity, random, state))
     val action = AddEntityAction(state.id, traceId, entityProperties.entityType.toString, entityProperties.kind, optionsWithPosition)
     Some((action, calls + 1))
   }
