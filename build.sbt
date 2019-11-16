@@ -11,27 +11,18 @@ val catsEffect = "org.typelevel" %% "cats-effect" % "2.0.0"
 val accord = "com.wix" %% "accord-core" % "0.7.3"
 val scalaGraph = "org.scala-graph" %% "graph-core" % "1.13.0"
 val scalaGraphJson = "org.scala-graph" %% "graph-json" % "1.12.1"
-val neo4j = "org.neo4j" % "neo4j" % "3.5.11"
-val neo4jBolt = "org.neo4j" % "neo4j-bolt" % "3.5.11"
-val neotypes = "com.dimafeng" %% "neotypes" % "0.4.0"
 val scalaTest = "org.scalatest" %% "scalatest" % "3.0.4" % Test
 
 lazy val `loudflow` = (project in file("."))
   .aggregate(`common`, `simulation-api`, `simulation-impl`, `model-api`, `model-impl`)
 
 lazy val `common` = (project in file("common"))
-//  .settings(
-//    Compile / unmanagedJars ++= (baseDirectory.value / "lib" ** "*.jar").classpath
-//  )
   .settings(
     libraryDependencies ++= Seq(
       lagomScaladslApi,
       lagomScaladslPersistenceCassandra,
       scalaGraph,
       scalaGraphJson,
-      neo4j,
-      neo4jBolt,
-      neotypes,
       accord,
       cats,
       catsEffect,

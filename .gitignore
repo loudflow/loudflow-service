@@ -13,5 +13,4 @@ bin
 logs
 /.idea/
 .DS_Store
-/neo4j-enterprise-4.0.0-alpha09mr02
-/common/lib/
+.iml
