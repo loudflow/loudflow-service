@@ -1,0 +1,23 @@
+_                 _  __ _
+| |               | |/ _| |
+| | ___  _   _  __| | |_| | _____      __
+| |/ _ \| | | |/ _` |  _| |/ _ \ \ /\ / /
+| | (_) | |_| | (_| | | | | (_) \ V  V /
+|_|\___/ \__,_|\__,_|_| |_|\___/ \_/\_/
+
+a framework for building multi-agent systems
+copyright © 2019, farsimple - all rights reserved
+
+All information contained in this source code package is, and remains the property of FarSimple Oy.
+The intellectual and technical concepts contained in this source code package are proprietary to FarSimple Oy,
+and may be covered by U.S. and Foreign Patents, patents in process, and are protected by trade secret or copyright law.
+Dissemination of this information or reproduction of this material is strictly forbidden unless prior written permission is obtained from FarSimple Oy.
+Access to the source code contained in this source code package is hereby forbidden to anyone except current FarSimple Oy employees,
+managers or contractors who have executed confidentiality and non-disclosure agreements explicitly covering such access.
+
+The copyright notice above does not evidence any actual or intended publication or disclosure of this source code,
+which includes information that is proprietary and confidential, and is a trade secret of FarSimple Oy.
+Any reproduction, modification, distribution, public performance or public display of or through use of this source code
+without the express written consent of FarSimple Oy is strictly prohibited, and in violation of applicable laws and international treaties.
+The receipt or possession of this source code and/or related information does not convey or imply any rights to reproduce,
+disclose or distribute its contents, or to manufacture, use or sell anything that it may describe, in whole or in part.
