@@ -16,12 +16,9 @@
 package com.loudflow.domain.agent
 
 import com.loudflow.domain.model.{ModelAction, ModelChange, ModelState}
-import com.sun.tools.classfile.TypeAnnotation.Position
 import org.slf4j.Logger
 
-import scala.util.Random
-
-trait Agent[S <: ModelState] {
+trait Agent[M <: ModelState] {
 
   implicit protected def log: Logger
 
@@ -29,9 +26,9 @@ trait Agent[S <: ModelState] {
      PUBLIC METHODS
   ************************************************************************ */
 
-  def create(state: S, traceId: String): ModelAction
-  def destroy(id: String, state: S, traceId: String): ModelAction
-  def change(change: ModelChange, state: S, traceId: String): S
-  def advance(id: String, random: Random, state: S, traceId: String): (Seq[ModelAction], Int)
+  def create(state: M, traceId: String): (Seq[ModelAction], Int)
+  def destroy(id: String, state: M, traceId: String): Seq[ModelAction]
+  def updateModel(change: ModelChange, state: M, traceId: String): M
+  def advance(id: String, state: M, traceId: String): (Seq[ModelAction], Int)
 
 }

@@ -16,26 +16,27 @@
 package com.loudflow.domain.model
 
 import java.time.Instant
-import scala.util.Random
+
 import play.api.libs.json._
 import com.wix.accord.dsl._
 import com.wix.accord.transform.ValidationTransform
-
 import com.loudflow.domain.model.Graph.Node
+import com.loudflow.util.JavaRandom
 
 final case class Entity
 (
   entityType: EntityType.Value,
   kind: String,
+  position: Option[Position],
   options: EntityOptions,
   created: Long
 ) extends Node {
   def shiftCluster(): Array[Position] = options.cluster match {
-    case Some(cluster) => options.position match {
+    case Some(cluster) => position match {
         case Some(p) => Cluster.shiftCluster(p, cluster)
         case None => cluster
       }
-    case None => options.position match {
+    case None => position match {
       case Some(p) => Array(p)
       case None => Array.empty
     }
@@ -58,9 +59,10 @@ object Entity {
     properties.created should be > 0L
   }
 
-  def apply(entityType: EntityType.Value, kind: String, options: EntityOptions): Entity = new Entity(entityType, kind, options, Instant.now().toEpochMilli)
+  def apply(entityType: EntityType.Value, kind: String, position: Position, options: EntityOptions): Entity = new Entity(entityType, kind, Some(position), options, Instant.now().toEpochMilli)
+  def apply(entityType: EntityType.Value, kind: String, options: EntityOptions): Entity = new Entity(entityType, kind, None, options, Instant.now().toEpochMilli)
 
-  def generateCluster(properties: ClusterProperties, random: Random): Array[Position] =
+  def generateCluster(properties: ClusterProperties, random: JavaRandom): Array[Position] =
     if (properties.is3D)
       if (properties.autoGenerate) Cluster.generateCluster(properties, random)
       else Cluster.generateCluster(properties.locations)
@@ -69,5 +71,14 @@ object Entity {
 
 }
 
-final case class EntityOptions(cluster: Option[Array[Position]] = None, group: Option[Int] = None, lifeSpan: Option[Int] = None, score: Option[Int] = None, position: Option[Position] = None)
-object EntityOptions { implicit val format: Format[EntityOptions] = Json.format }
+final case class EntityOptions(cluster: Option[Array[Position]] = None, group: Option[Int] = None, lifeSpan: Option[Int] = None, score: Option[Int] = None)
+object EntityOptions {
+  implicit val format: Format[EntityOptions] = Json.format
+  def apply(properties: EntityProperties, random: JavaRandom): EntityOptions = {
+    val cluster = properties.cluster.map(Entity.generateCluster(_, random))
+    val group = properties.grouping.map(g => random.nextInt(g + 1))
+    val lifeSpan = properties.population.lifeSpanRange.map(_.pick(random))
+    val score = properties.score.map(_.span.pick(random))
+    EntityOptions(cluster, group, lifeSpan, score)
+  }
+}

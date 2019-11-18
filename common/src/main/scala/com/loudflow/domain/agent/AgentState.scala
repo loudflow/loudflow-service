@@ -16,26 +16,21 @@
 package com.loudflow.domain.agent
 
 import com.loudflow.domain.model.ModelState
-import com.loudflow.domain.simulation.{GraphSimulationState, SimulationState}
+import com.loudflow.util.JavaRandom
 import com.wix.accord.dsl._
 import com.wix.accord.transform.ValidationTransform
 import play.api.libs.json._
 
-import scala.util.Random
-
 trait AgentState {
-  val random: Random = {
-    val r = new Random(properties.seed)
-    (1 to calls).foreach(_ => r.nextInt())
-    r
-  }
   def demuxer: String
   def properties: AgentProperties
+  def seed: Long
   def model: ModelState
   def calls: Int
   def ticks: Long
   def isActive: Boolean
   def time: Long = properties.interval * ticks
+  val random: JavaRandom = new JavaRandom(seed)
 }
 object AgentState {
   implicit val propertiesValidator: ValidationTransform.TransformedValidator[AgentState] = validator { properties =>

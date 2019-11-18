@@ -54,7 +54,8 @@ class GraphAgentPersistentEntity(implicit val persistentEntityRegistry: Persiste
         log.trace(s"[$traceId] GraphAgentPersistentEntity[$entityId][idle] received command: StartAgent()")
         state match {
           case Some(s) =>
-            ctx.thenPersist(AgentStarted(entityId, traceId, create(s.model, traceId)))(_ => ctx.done)
+            val result = create(s.random, s.model, traceId)
+            ctx.thenPersist(AgentStarted(entityId, traceId, result._1, result._2))(_ => ctx.done)
           case None =>
             ctx.commandFailed(new IllegalStateException(s"[$traceId] AgentPersistentEntity[$entityId][running] failed due to missing state while handling command: StartAgent()"))
             ctx.done
@@ -71,11 +72,11 @@ class GraphAgentPersistentEntity(implicit val persistentEntityRegistry: Persiste
         None
     }
     .onEvent {
-      case (AgentStarted(_, traceId, action), state) =>
-        log.trace(s"[$traceId] GraphAgentPersistentEntity[$entityId][idle] received event: AgentStarted($action)")
+      case (AgentStarted(_, traceId, actions, callsMade), state) =>
+        log.trace(s"[$traceId] GraphAgentPersistentEntity[$entityId][idle] received event: AgentStarted($actions, $callsMade)")
         state.map(s => {
           clock = startClock(s, traceId)
-          GraphAgentState(s.properties, s.model)
+          GraphAgentState(s.properties, s.model, callsMade)
         })
     }
     .onEvent {
@@ -156,7 +157,7 @@ class GraphAgentPersistentEntity(implicit val persistentEntityRegistry: Persiste
     .onEvent {
       case (AgentUpdated(_, traceId, changeEvent), state) =>
         log.trace(s"[$traceId] GraphAgentPersistentEntity[$entityId][running] received event: AgentUpdated($changeEvent)")
-        state.map(s => s.copy(model = change(changeEvent, s.model, traceId)))
+        state.map(s => s.copy(model = updateModel(changeEvent, s.model, traceId)))
     }
   }
 

@@ -19,8 +19,8 @@ import akka.Done
 import play.api.libs.json._
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntity
 import com.loudflow.domain.Message
-import com.loudflow.domain.model.{ModelProperties, ModelChange}
-import com.loudflow.domain.simulation.{SimulationState, SimulationProperties}
+import com.loudflow.domain.model.{GraphState, ModelChange, ModelProperties, ModelState}
+import com.loudflow.domain.simulation.{SimulationProperties, SimulationState}
 
 sealed trait SimulationCommand extends Message {
   def demuxer: String
@@ -40,10 +40,10 @@ final case class DestroySimulation(traceId: String) extends PersistentEntity.Rep
 }
 object DestroySimulation { implicit val format: Format[DestroySimulation] = Json.format }
 
-final case class ReadSimulation(traceId: String) extends PersistentEntity.ReplyType[SimulationState] with SimulationCommand {
+final case class ReadSimulation[S <: ModelState](traceId: String) extends PersistentEntity.ReplyType[SimulationState[S]] with SimulationCommand {
   val demuxer = "read-simulation"
 }
-object ReadSimulation { implicit val format: Format[ReadSimulation] = Json.format }
+object ReadSimulation { implicit val format: Format[ReadSimulation[GraphState]] = Json.format }
 
 /* ************************************************************************
    Control Commands
@@ -88,7 +88,7 @@ object SimulationCommand {
     (JsPath \ "demuxer").read[String].flatMap {
       case "create-simulation" => implicitly[Reads[CreateSimulation]].map(identity)
       case "destroy-simulation" => implicitly[Reads[DestroySimulation]].map(identity)
-      case "read-simulation" => implicitly[Reads[ReadSimulation]].map(identity)
+      case "read-simulation" => implicitly[Reads[ReadSimulation[GraphState]]].map(identity)
       case "start-simulation" => implicitly[Reads[StartSimulation]].map(identity)
       case "stop-simulation" => implicitly[Reads[StopSimulation]].map(identity)
       case "pause-simulation" => implicitly[Reads[PauseSimulation]].map(identity)
@@ -102,7 +102,7 @@ object SimulationCommand {
     val (jsValue, demuxer) = obj match {
       case command: CreateSimulation   => (Json.toJson(command)(CreateSimulation.format), "create-simulation")
       case command: DestroySimulation   => (Json.toJson(command)(DestroySimulation.format), "destroy-simulation")
-      case command: ReadSimulation   => (Json.toJson(command)(ReadSimulation.format), "read-simulation")
+      case command: ReadSimulation[GraphState]   => (Json.toJson(command)(ReadSimulation.format[GraphState]), "read-simulation")
       case command: StartSimulation   => (Json.toJson(command)(StartSimulation.format), "start-simulation")
       case command: StopSimulation => (Json.toJson(command)(StopSimulation.format), "stop-simulation")
       case command: PauseSimulation => (Json.toJson(command)(PauseSimulation.format), "pause-simulation")

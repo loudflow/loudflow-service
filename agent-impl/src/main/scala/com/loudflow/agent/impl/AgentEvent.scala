@@ -30,8 +30,8 @@ object AgentEvent {
   val Tag: AggregateEventShards[AgentEvent] = AggregateEventTag.sharded[AgentEvent](shardCount)
 
   def toAction(event: AgentEvent): ModelAction = event match {
-    case AgentStarted(_, traceId, action) => BatchAction(action.modelId, traceId, Seq(action))
-    case AgentStopped(_, traceId, action) => BatchAction(action.modelId, traceId, Seq(action))
+    case AgentStarted(_, traceId, actions, _) => if (actions.nonEmpty) BatchAction(actions.head.modelId, traceId, actions) else BatchAction("", "", Seq.empty)
+    case AgentStopped(_, traceId, actions) => if (actions.nonEmpty) BatchAction(actions.head.modelId, traceId, actions) else BatchAction("", "", Seq.empty)
     case AgentAdvanced(_, traceId, actions, _) => if (actions.nonEmpty) BatchAction(actions.head.modelId, traceId, actions) else BatchAction("", "", Seq.empty)
     case _ => BatchAction("", "", Seq.empty)
   }
@@ -55,12 +55,12 @@ object AgentDestroyed { implicit val format: Format[AgentDestroyed] = Json.forma
    Control Events
 ************************************************************************ */
 
-final case class AgentStarted(agentId: String, traceId: String, action: ModelAction) extends AgentEvent {
+final case class AgentStarted(agentId: String, traceId: String, actions: Seq[ModelAction], calls: Int) extends AgentEvent {
   val eventType = "agent-started"
 }
 object AgentStarted { implicit val format: Format[AgentStarted] = Json.format }
 
-final case class AgentStopped(agentId: String, traceId: String, action: ModelAction) extends AgentEvent {
+final case class AgentStopped(agentId: String, traceId: String, actions: Seq[ModelAction]) extends AgentEvent {
   val eventType = "agent-stopped"
 }
 object AgentStopped { implicit val format: Format[AgentStopped] = Json.format }

@@ -15,7 +15,9 @@
 ************************************************************************ */
 package com.loudflow.domain.model
 
-import scala.util.Random
+import com.loudflow.util.JavaRandom
+
+import com.loudflow.util.shuffle
 
 final case class Cluster(positions: Array[Position])
 object Cluster {
@@ -32,18 +34,18 @@ object Cluster {
 
   def recoverClusterPoint(position: Position, center: Position): Position = Position(position.x - center.x, position.y - center.y, position.z - center.z)
 
-  def generateCluster(properties: ClusterProperties, random: Random): Array[Position] = {
+  def generateCluster(properties: ClusterProperties, random: JavaRandom): Array[Position] = {
     val size = properties.size.pick(random)
     val cluster = (1 to size).foldLeft(List(Position(0, 0)))((acc, _) => {
       val last = acc.head
       if (properties.is3D) {
-        random.shuffle(Direction.cardinal3D.map(direction => {
+        shuffle(Direction.cardinal3D.map(direction => {
           Direction.stepInDirection(last, direction, properties.step)
-        }).toSeq.diff(acc)).head :: acc
+        }).toSeq.diff(acc), random).head :: acc
       } else {
-        random.shuffle(Direction.cardinal.map(direction => {
+        shuffle(Direction.cardinal.map(direction => {
           Direction.stepInDirection(last, direction, properties.step)
-        }).toSeq.diff(acc)).head :: acc
+        }).toSeq.diff(acc), random).head :: acc
       }
     }).toArray
     generateCluster(cluster)

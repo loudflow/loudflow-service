@@ -16,12 +16,12 @@
 package com.loudflow.domain.simulation
 
 import com.wix.accord.transform.ValidationTransform
-import java.util.UUID
 
 import play.api.libs.json._
 import com.wix.accord.dsl._
+import com.loudflow.util.randomSeed
 
-final case class SimulationProperties(time: TimeSystem.Value = TimeSystem.Event, seed: Long = UUID.randomUUID().getMostSignificantBits & Long.MaxValue, interval: Int = 100, step: Int = 1)
+final case class SimulationProperties(time: TimeSystem.Value = TimeSystem.Event, seed: Long = randomSeed, interval: Int = 100, step: Int = 1)
 object SimulationProperties {
   implicit val format: Format[SimulationProperties] = Json.format
   implicit val propertiesValidator: ValidationTransform.TransformedValidator[SimulationProperties] = validator { properties =>

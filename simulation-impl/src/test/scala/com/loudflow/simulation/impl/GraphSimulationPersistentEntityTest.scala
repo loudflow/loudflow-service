@@ -24,7 +24,7 @@ import com.lightbend.lagom.scaladsl.playjson.JsonSerializerRegistry
 import com.lightbend.lagom.scaladsl.server.LocalServiceLocator
 import com.lightbend.lagom.scaladsl.testkit.{PersistentEntityTestDriver, ServiceTest}
 import com.loudflow.domain.model.{GraphProperties, GridProperties, ModelProperties, ModelType}
-import com.loudflow.domain.simulation.{GraphSimulationState, SimulationProperties}
+import com.loudflow.domain.simulation.{GraphBasedSimulationState, SimulationProperties}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpec}
 
 import scala.concurrent.ExecutionContext
@@ -37,9 +37,9 @@ class GraphSimulationPersistentEntityTest(implicit ec: ExecutionContext) extends
     new SimulationApplication(ctx) with LocalServiceLocator
   }
 
-  private def withTestDriver(block: PersistentEntityTestDriver[SimulationCommand, SimulationEvent, Option[GraphSimulationState]] => Unit): Unit = {
+  private def withTestDriver(block: PersistentEntityTestDriver[SimulationCommand, SimulationEvent, Option[GraphBasedSimulationState]] => Unit): Unit = {
     val id = UUID.randomUUID().toString
-    val driver = new PersistentEntityTestDriver(system, new GraphSimulationPersistentEntity()(server.application.persistentEntityRegistry, system, ec), id)
+    val driver = new PersistentEntityTestDriver(system, new GraphBasedSimulationPersistentEntity()(server.application.persistentEntityRegistry, system, ec), id)
     block(driver)
     driver.getAllIssues should have size 0
   }

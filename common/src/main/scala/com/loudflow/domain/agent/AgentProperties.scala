@@ -20,8 +20,9 @@ import java.util.UUID
 
 import play.api.libs.json._
 import com.wix.accord.dsl._
+import com.loudflow.util.randomSeed
 
-final case class AgentProperties(agentType: AgentType.Value, seed: Long = UUID.randomUUID().getMostSignificantBits & Long.MaxValue, interval: Int = 100)
+final case class AgentProperties(agentType: AgentType.Value, seed: Long = randomSeed, interval: Int = 100)
 object AgentProperties {
   implicit val format: Format[AgentProperties] = Json.format
   implicit val propertiesValidator: ValidationTransform.TransformedValidator[AgentProperties] = validator { properties =>

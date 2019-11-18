@@ -15,47 +15,21 @@
 ************************************************************************ */
 package com.loudflow.domain.simulation
 
-import com.loudflow.domain.model.ModelState
+import com.loudflow.domain.model.{GraphState, ModelState}
+import com.loudflow.util.JavaRandom
 import com.wix.accord.transform.ValidationTransform
 
-import scala.math.{floor, round}
 import play.api.libs.json._
 import com.wix.accord.dsl._
 
-import scala.util.Random
-
-trait SimulationState {
-  val random: Random = {
-    val r = new Random(properties.seed)
-    (1 to calls).foreach(_ => r.nextInt())
-    r
-  }
-  def demuxer: String
-  def properties: SimulationProperties
-  def model: ModelState
-  def calls: Int
-  def ticks: Long
-  def isRunning: Boolean
+final case class SimulationState[S <: ModelState](properties: SimulationProperties, seed: Long, model: S, ticks: Long = 1L, isRunning: Boolean = false) {
+  val random: JavaRandom = new JavaRandom(seed)
   def time: Long = properties.interval * ticks
-  def steps: Long = round(floor(ticks / properties.step))
-  def isStep: Boolean = (ticks % properties.step) == 0
 }
 object SimulationState {
-  implicit val propertiesValidator: ValidationTransform.TransformedValidator[SimulationState] = validator { properties =>
-    properties.calls should be >= 0
+  implicit val graphStateFormat: Format[SimulationState[GraphState]] = Json.format
+  implicit val graphStatePropertiesValidator: ValidationTransform.TransformedValidator[SimulationState[GraphState]] = validator { properties =>
     properties.ticks should be > 0L
-    properties.model is valid[ModelState]
-  }
-  implicit val reads: Reads[SimulationState] = {
-    (JsPath \ "demuxer").read[String].flatMap {
-      case "graph" => implicitly[Reads[GraphSimulationState]].map(identity)
-      case other => Reads(_ => JsError(s"Read Simulation.State failed due to unknown type $other."))
-    }
-  }
-  implicit val writes: Writes[SimulationState] = Writes { obj =>
-    val (jsValue, demuxer) = obj match {
-      case command: GraphSimulationState => (Json.toJson(command)(GraphSimulationState.format), "graph")
-    }
-    jsValue.transform(JsPath.json.update((JsPath \ 'demuxer).json.put(JsString(demuxer)))).get
+    properties.model is valid
   }
 }

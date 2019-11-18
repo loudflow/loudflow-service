@@ -18,24 +18,18 @@ package com.loudflow.domain.model
 import cats.data.{State => StateMonad}
 import org.slf4j.Logger
 
-import scala.util.Random
-
 trait Model[S <: ModelState] {
 
   implicit def log: Logger
 
-  def create(id: String, properties: ModelProperties): StateMonad[S, Unit]
+  def create(properties: ModelProperties): StateMonad[S, Unit]
   def destroy(): StateMonad[S, Unit]
+  def add(entityType: EntityType.Value, kind: String): StateMonad[S, Unit]
   def add(entityType: EntityType.Value, kind: String, options: EntityOptions): StateMonad[S, Unit]
+  def add(entityType: EntityType.Value, kind: String, options: EntityOptions, position: Position): StateMonad[S, Unit]
+  def move(entityId: String): StateMonad[S, Unit]
   def move(entityId: String, position: Position): StateMonad[S, Unit]
   def remove(entityId: String): StateMonad[S, Unit]
-
-  def allEntities(state: S): Set[Entity]
-  def getEntity(entityId: String, state: S): Option[Entity]
-  def findEntities(entityType: EntityType.Value, kind: String, state: S): Set[Entity]
-  def randomAddablePosition(e: Entity, r: Random, state: S): Option[Position]
-  def randomMovablePosition(entityId: String, r: Random, state: S): Option[Position]
-
 }
 
 object Model {

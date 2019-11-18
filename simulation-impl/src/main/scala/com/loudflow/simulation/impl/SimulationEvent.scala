@@ -30,9 +30,9 @@ object SimulationEvent {
   val Tag: AggregateEventShards[SimulationEvent] = AggregateEventTag.sharded[SimulationEvent](shardCount)
 
   def toAction(event: SimulationEvent): ModelAction = event match {
-    case SimulationStarted(_, traceId, actions, _) => if (actions.nonEmpty) BatchAction(actions.head.modelId, traceId, actions) else BatchAction("", "", Seq.empty)
+    case SimulationStarted(_, traceId, actions) => if (actions.nonEmpty) BatchAction(actions.head.modelId, traceId, actions) else BatchAction("", "", Seq.empty)
     case SimulationStopped(_, traceId, actions) => if (actions.nonEmpty) BatchAction(actions.head.modelId, traceId, actions) else BatchAction("", "", Seq.empty)
-    case SimulationAdvanced(_, traceId, actions, _) => if (actions.nonEmpty) BatchAction(actions.head.modelId, traceId, actions) else BatchAction("", "", Seq.empty)
+    case SimulationAdvanced(_, traceId, actions) => if (actions.nonEmpty) BatchAction(actions.head.modelId, traceId, actions) else BatchAction("", "", Seq.empty)
     case _ => BatchAction("", "", Seq.empty)
   }
 }
@@ -55,12 +55,12 @@ object SimulationDestroyed { implicit val format: Format[SimulationDestroyed] = 
    Control Events
 ************************************************************************ */
 
-final case class SimulationStarted(simulationId: String, traceId: String, actions: Seq[ModelAction], calls: Int) extends SimulationEvent {
+final case class SimulationStarted(simulationId: String, traceId: String, actions: List[ModelAction]) extends SimulationEvent {
   val eventType = "simulation-started"
 }
 object SimulationStarted { implicit val format: Format[SimulationStarted] = Json.format }
 
-final case class SimulationStopped(simulationId: String, traceId: String, actions: Seq[ModelAction]) extends SimulationEvent {
+final case class SimulationStopped(simulationId: String, traceId: String, actions: List[ModelAction]) extends SimulationEvent {
   val eventType = "simulation-stopped"
 }
 object SimulationStopped { implicit val format: Format[SimulationStopped] = Json.format }
@@ -75,7 +75,7 @@ final case class SimulationResumed(simulationId: String, traceId: String) extend
 }
 object SimulationResumed { implicit val format: Format[SimulationResumed] = Json.format }
 
-final case class SimulationAdvanced(simulationId: String, traceId: String, actions: Seq[ModelAction], calls: Int) extends SimulationEvent {
+final case class SimulationAdvanced(simulationId: String, traceId: String, actions: List[ModelAction]) extends SimulationEvent {
   val eventType = "simulation-advanced"
 }
 object SimulationAdvanced { implicit val format: Format[SimulationAdvanced] = Json.format }

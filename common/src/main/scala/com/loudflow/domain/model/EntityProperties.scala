@@ -15,9 +15,10 @@
 ************************************************************************ */
 package com.loudflow.domain.model
 
+import com.loudflow.util.Span
 import com.wix.accord.dsl._
 import com.wix.accord.transform.ValidationTransform
-import play.api.libs.json.{JsSuccess, Format, Reads, Writes, JsError, JsObject, JsString, Json, JsPath}
+import play.api.libs.json.{Format, JsError, JsObject, JsPath, JsString, JsSuccess, Json, Reads, Writes}
 
 final case class EntityProperties
 (

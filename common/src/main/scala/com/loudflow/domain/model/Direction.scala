@@ -15,6 +15,7 @@
 ************************************************************************ */
 package com.loudflow.domain.model
 
+import com.loudflow.util.Span
 import play.api.libs.json._
 
 sealed trait Direction {

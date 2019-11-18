@@ -15,6 +15,9 @@
 ************************************************************************ */
 package com.loudflow.domain.model
 
+import java.util.UUID
+
+import com.loudflow.util.JavaRandom
 import com.wix.accord.dsl._
 import com.wix.accord.transform.ValidationTransform
 import play.api.libs.json._
@@ -22,6 +25,8 @@ import play.api.libs.json._
 final case class ModelProperties
 (
   modelType: ModelType.Value,
+  id: String = UUID.randomUUID().toString,
+  seed: Long = JavaRandom.seedUniquifier ^ System.nanoTime,
   graph: Option[GraphProperties] = None,
   entities: Set[EntityProperties] = Set.empty
 ) {

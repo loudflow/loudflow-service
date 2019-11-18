@@ -36,7 +36,7 @@ final case class DestroyModelAction(modelId: String, traceId: String) extends Mo
 }
 object DestroyModelAction { implicit val format: Format[DestroyModelAction] = Json.format }
 
-final case class AddEntityAction(modelId: String, traceId: String, entityType: String, kind: String, options: EntityOptions) extends ModelAction {
+final case class AddEntityAction(modelId: String, traceId: String, entityType: String, kind: String, options: Option[EntityOptions] = None) extends ModelAction {
   val demuxer = "add-entity"
 }
 object AddEntityAction { implicit val format: Format[AddEntityAction] = Json.format }

@@ -15,25 +15,29 @@
 ************************************************************************ */
 package com.loudflow.domain.model
 
+import com.loudflow.util.JavaRandom
 import com.wix.accord.dsl._
 import com.wix.accord.transform.ValidationTransform
 import play.api.libs.json._
 
 trait ModelState {
   def demuxer: String
-  def id: String
   def properties: ModelProperties
+  def seed: Long
   def entities: Set[Entity]
   def isEmpty: Boolean
   def entityProperties(entityType: EntityType.Value, kind: String): Option[EntityProperties] = properties.entityProperties(entityType, kind)
+  def getEntity(entityId: String): Option[Entity] = entities.find(_.id == entityId)
+  def findEntities(entityType: EntityType.Value, kind: String): Set[Entity] = entities.filter(e => e.entityType == entityType && e.kind == kind)
+  val random: JavaRandom = new JavaRandom(seed)
 }
 
 object ModelState {
   implicit val propertiesValidator: ValidationTransform.TransformedValidator[ModelState] = validator { properties =>
     properties.properties is valid
   }
-  def apply(id: String, properties: ModelProperties): ModelState = properties.modelType match {
-    case ModelType.Graph => GraphState(id, properties)
+  def apply(properties: ModelProperties): ModelState = properties.modelType match {
+    case ModelType.Graph => GraphState(properties)
   }
   implicit val reads: Reads[ModelState] = {
     (JsPath \ "demuxer").read[String].flatMap {

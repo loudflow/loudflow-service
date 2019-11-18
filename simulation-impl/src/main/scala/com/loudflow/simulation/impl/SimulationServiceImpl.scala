@@ -138,8 +138,7 @@ class SimulationServiceImpl(modelService: ModelService, persistentEntityRegistry
   }
 
   private def createPersistentEntity(id: String, modelType: ModelType.Value): PersistentEntityRef[SimulationCommand] = modelType match {
-    case ModelType.Graph =>
-      persistentEntityRegistry.refFor[GraphSimulationPersistentEntity](id)
+    case ModelType.Graph => persistentEntityRegistry.refFor[SimulationPersistentEntity[_]](id)
   }
 
   private def getPersistentEntity(id: String): PersistentEntityRef[SimulationCommand] = persistentEntityRegistry.refFor[SimulationPersistentEntity[_]](id)
