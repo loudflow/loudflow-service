@@ -20,26 +20,29 @@ import java.util.UUID
 import akka.Done
 import akka.actor.ActorSystem
 import akka.testkit.TestKit
+import com.lightbend.lagom.scaladsl.persistence.PersistentEntityRegistry
 import com.lightbend.lagom.scaladsl.playjson.JsonSerializerRegistry
 import com.lightbend.lagom.scaladsl.server.LocalServiceLocator
 import com.lightbend.lagom.scaladsl.testkit.{PersistentEntityTestDriver, ServiceTest}
 import com.loudflow.domain.model.{GraphProperties, GridProperties, ModelProperties, ModelType}
-import com.loudflow.domain.simulation.{GraphBasedSimulationState, SimulationProperties}
+import com.loudflow.domain.simulation.{SimulationProperties, SimulationState}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpec}
 
 import scala.concurrent.ExecutionContext
 
-class GraphSimulationPersistentEntityTest(implicit ec: ExecutionContext) extends WordSpec with Matchers with BeforeAndAfterAll {
+class SimulationPersistentEntityTest(implicit ec: ExecutionContext) extends WordSpec with Matchers with BeforeAndAfterAll {
 
-  private val system = ActorSystem("GraphSimulationPersistentEntityTest", JsonSerializerRegistry.actorSystemSetupFor(SimulationSerializerRegistry))
+  private implicit val system: ActorSystem = ActorSystem("GraphSimulationPersistentEntityTest", JsonSerializerRegistry.actorSystemSetupFor(SimulationSerializerRegistry))
 
   private lazy val server = ServiceTest.startServer(ServiceTest.defaultSetup.withCassandra()) { ctx =>
     new SimulationApplication(ctx) with LocalServiceLocator
   }
 
-  private def withTestDriver(block: PersistentEntityTestDriver[SimulationCommand, SimulationEvent, Option[GraphBasedSimulationState]] => Unit): Unit = {
+  private implicit val registry: PersistentEntityRegistry = server.application.persistentEntityRegistry
+
+  private def withTestDriver(block: PersistentEntityTestDriver[SimulationCommand, SimulationEvent, Option[SimulationState]] => Unit): Unit = {
     val id = UUID.randomUUID().toString
-    val driver = new PersistentEntityTestDriver(system, new GraphBasedSimulationPersistentEntity()(server.application.persistentEntityRegistry, system, ec), id)
+    val driver = new PersistentEntityTestDriver(system, new SimulationPersistentEntity(), id)
     block(driver)
     driver.getAllIssues should have size 0
   }

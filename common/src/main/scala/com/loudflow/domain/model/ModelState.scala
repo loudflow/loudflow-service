@@ -22,13 +22,14 @@ import play.api.libs.json._
 
 trait ModelState {
   def demuxer: String
+  def id: String
   def properties: ModelProperties
   def seed: Long
   def entities: Set[Entity]
   def isEmpty: Boolean
-  def entityProperties(entityType: EntityType.Value, kind: String): Option[EntityProperties] = properties.entityProperties(entityType, kind)
+  def entityProperties(kind: String): Option[EntityProperties] = properties.entityProperties(kind)
   def getEntity(entityId: String): Option[Entity] = entities.find(_.id == entityId)
-  def findEntities(entityType: EntityType.Value, kind: String): Set[Entity] = entities.filter(e => e.entityType == entityType && e.kind == kind)
+  def findEntities(kind: String): Set[Entity] = entities.filter(_.kind == kind)
   val random: JavaRandom = new JavaRandom(seed)
 }
 
@@ -36,8 +37,8 @@ object ModelState {
   implicit val propertiesValidator: ValidationTransform.TransformedValidator[ModelState] = validator { properties =>
     properties.properties is valid
   }
-  def apply(properties: ModelProperties): ModelState = properties.modelType match {
-    case ModelType.Graph => GraphState(properties)
+  def apply(id: String, properties: ModelProperties): ModelState = properties.modelType match {
+    case ModelType.Graph => GraphState(id, properties)
   }
   implicit val reads: Reads[ModelState] = {
     (JsPath \ "demuxer").read[String].flatMap {

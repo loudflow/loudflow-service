@@ -15,40 +15,21 @@
 ************************************************************************ */
 package com.loudflow.domain.agent
 
-import com.loudflow.domain.model.ModelState
+import com.loudflow.domain.model.{GraphState, ModelState}
 import com.loudflow.util.JavaRandom
 import com.wix.accord.dsl._
 import com.wix.accord.transform.ValidationTransform
 import play.api.libs.json._
 
-trait AgentState {
-  def demuxer: String
-  def properties: AgentProperties
-  def seed: Long
-  def model: ModelState
-  def calls: Int
-  def ticks: Long
-  def isActive: Boolean
-  def time: Long = properties.interval * ticks
+final case class AgentState(properties: AgentProperties, seed: Long, model: ModelState, ticks: Long = 1L, isActive: Boolean = false) {
   val random: JavaRandom = new JavaRandom(seed)
+  def time: Long = properties.interval * ticks
 }
 object AgentState {
+  implicit val format: Format[AgentState] = Json.format
   implicit val propertiesValidator: ValidationTransform.TransformedValidator[AgentState] = validator { properties =>
-    properties.calls should be >= 0
     properties.ticks should be > 0L
-    properties.model is valid[ModelState]
-  }
-  implicit val reads: Reads[AgentState] = {
-    (JsPath \ "demuxer").read[String].flatMap {
-      case "graph" => implicitly[Reads[GraphAgentState]].map(identity)
-      case other => Reads(_ => JsError(s"Read Simulation.State failed due to unknown type $other."))
-    }
-  }
-  implicit val writes: Writes[AgentState] = Writes { obj =>
-    val (jsValue, demuxer) = obj match {
-      case command: GraphAgentState => (Json.toJson(command)(GraphAgentState.format), "graph")
-    }
-    jsValue.transform(JsPath.json.update((JsPath \ 'demuxer).json.put(JsString(demuxer)))).get
+    properties.model is valid
   }
 }
 

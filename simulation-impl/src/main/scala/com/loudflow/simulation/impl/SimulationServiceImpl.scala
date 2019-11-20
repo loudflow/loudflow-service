@@ -21,7 +21,7 @@ import akka.persistence.query.Offset
 
 import scala.concurrent.{ExecutionContext, Future}
 import akka.{Done, NotUsed}
-import com.loudflow.domain.model.{BatchAction, ModelAction, ModelType}
+import com.loudflow.domain.model.{BatchAction, ModelAction}
 import com.loudflow.model.api.ModelService
 import com.loudflow.simulation.api.{CreateSimulationRequest, ReadSimulationResponse, SimulationService}
 import akka.stream.scaladsl.Flow
@@ -63,7 +63,7 @@ class SimulationServiceImpl(modelService: ModelService, persistentEntityRegistry
       log.trace(s"[$traceId] Request body: $request")
       validate(request)
       val command = CreateSimulation(traceId, request.data.attributes.simulation, request.data.attributes.model)
-      createPersistentEntity(id, request.data.attributes.model.modelType).ask(command).map(_ => accepted(id, command))
+      createPersistentEntity(id).ask(command).map(_ => accepted(id, command))
     }
   }
 
@@ -77,9 +77,7 @@ class SimulationServiceImpl(modelService: ModelService, persistentEntityRegistry
   override def readSimulation(id: String): ServiceCall[NotUsed, ReadSimulationResponse] = trace { traceId =>
     ServerServiceCall { _ => {
       val command = ReadSimulation(traceId)
-      getPersistentEntity(id).ask(command).map(state => {
-        ReadSimulationResponse(id, state)
-      })
+      getPersistentEntity(id).ask(command)
     }}
   }
 
@@ -137,10 +135,8 @@ class SimulationServiceImpl(modelService: ModelService, persistentEntityRegistry
     }
   }
 
-  private def createPersistentEntity(id: String, modelType: ModelType.Value): PersistentEntityRef[SimulationCommand] = modelType match {
-    case ModelType.Graph => persistentEntityRegistry.refFor[SimulationPersistentEntity[_]](id)
-  }
+  private def createPersistentEntity(id: String): PersistentEntityRef[SimulationCommand] = persistentEntityRegistry.refFor[SimulationPersistentEntity](id)
 
-  private def getPersistentEntity(id: String): PersistentEntityRef[SimulationCommand] = persistentEntityRegistry.refFor[SimulationPersistentEntity[_]](id)
+  private def getPersistentEntity(id: String): PersistentEntityRef[SimulationCommand] = persistentEntityRegistry.refFor[SimulationPersistentEntity](id)
 
 }

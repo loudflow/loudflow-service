@@ -15,8 +15,6 @@
 ************************************************************************ */
 package com.loudflow.domain.model
 
-import java.util.UUID
-
 import com.loudflow.util.JavaRandom
 import com.wix.accord.dsl._
 import com.wix.accord.transform.ValidationTransform
@@ -25,13 +23,11 @@ import play.api.libs.json._
 final case class ModelProperties
 (
   modelType: ModelType.Value,
-  id: String = UUID.randomUUID().toString,
-  seed: Long = JavaRandom.seedUniquifier ^ System.nanoTime,
   graph: Option[GraphProperties] = None,
+  seed: Long = JavaRandom.seedUniquifier ^ System.nanoTime,
   entities: Set[EntityProperties] = Set.empty
 ) {
-  def entityProperties(entityType: EntityType.Value, kind: String): Option[EntityProperties] =
-    entities.find(entity => entity.entityType == entityType && entity.kind == kind)
+  def entityProperties(kind: String): Option[EntityProperties] = entities.find(_.kind == kind)
 }
 
 object ModelProperties {
@@ -82,4 +78,3 @@ object ModelType {
     case Graph => JsObject(Seq("demuxer" -> JsString("graph")))
   }
 }
-

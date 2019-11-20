@@ -21,7 +21,7 @@ import akka.persistence.query.Offset
 
 import scala.concurrent.{ExecutionContext, Future}
 import akka.{Done, NotUsed}
-import com.loudflow.domain.model.{BatchAction, ModelAction, ModelType}
+import com.loudflow.domain.model.{BatchAction, ModelAction}
 import com.loudflow.model.api.ModelService
 import akka.stream.scaladsl.Flow
 import com.lightbend.lagom.scaladsl.api.ServiceCall
@@ -63,7 +63,7 @@ class AgentServiceImpl(modelService: ModelService, persistentEntityRegistry: Per
       log.trace(s"[$traceId] Request body: $request")
       validate(request)
       val command = CreateAgent(traceId, request.data.attributes.agent, request.data.attributes.model)
-      createPersistentEntity(id, request.data.attributes.model.modelType).ask(command).map(_ => accepted(id, command))
+      createPersistentEntity(id).ask(command).map(_ => accepted(id, command))
     }
   }
 
@@ -77,9 +77,7 @@ class AgentServiceImpl(modelService: ModelService, persistentEntityRegistry: Per
   override def readAgent(id: String): ServiceCall[NotUsed, ReadAgentResponse] = trace { traceId =>
     ServerServiceCall { _ => {
       val command = ReadAgent(traceId)
-      getPersistentEntity(id).ask(command).map(state => {
-        ReadAgentResponse(id, state)
-      })
+      getPersistentEntity(id).ask(command)
     }}
   }
 
@@ -137,11 +135,8 @@ class AgentServiceImpl(modelService: ModelService, persistentEntityRegistry: Per
     }
   }
 
-  private def createPersistentEntity(id: String, modelType: ModelType.Value): PersistentEntityRef[AgentCommand] = modelType match {
-    case ModelType.Graph =>
-      persistentEntityRegistry.refFor[GraphAgentPersistentEntity](id)
-  }
+  private def createPersistentEntity(id: String): PersistentEntityRef[AgentCommand] = persistentEntityRegistry.refFor[AgentPersistentEntity](id)
 
-  private def getPersistentEntity(id: String): PersistentEntityRef[AgentCommand] = persistentEntityRegistry.refFor[AgentPersistentEntity[_]](id)
+  private def getPersistentEntity(id: String): PersistentEntityRef[AgentCommand] = persistentEntityRegistry.refFor[AgentPersistentEntity](id)
 
 }

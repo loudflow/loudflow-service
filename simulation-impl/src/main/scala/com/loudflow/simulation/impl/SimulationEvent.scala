@@ -30,10 +30,10 @@ object SimulationEvent {
   val Tag: AggregateEventShards[SimulationEvent] = AggregateEventTag.sharded[SimulationEvent](shardCount)
 
   def toAction(event: SimulationEvent): ModelAction = event match {
-    case SimulationStarted(_, traceId, actions) => if (actions.nonEmpty) BatchAction(actions.head.modelId, traceId, actions) else BatchAction("", "", Seq.empty)
-    case SimulationStopped(_, traceId, actions) => if (actions.nonEmpty) BatchAction(actions.head.modelId, traceId, actions) else BatchAction("", "", Seq.empty)
-    case SimulationAdvanced(_, traceId, actions) => if (actions.nonEmpty) BatchAction(actions.head.modelId, traceId, actions) else BatchAction("", "", Seq.empty)
-    case _ => BatchAction("", "", Seq.empty)
+    case SimulationStarted(_, traceId, actions) => if (actions.nonEmpty) BatchAction(actions.head.modelId, traceId, actions) else BatchAction("", "", List.empty)
+    case SimulationStopped(_, traceId, actions) => if (actions.nonEmpty) BatchAction(actions.head.modelId, traceId, actions) else BatchAction("", "", List.empty)
+    case SimulationAdvanced(_, traceId, actions) => if (actions.nonEmpty) BatchAction(actions.head.modelId, traceId, actions) else BatchAction("", "", List.empty)
+    case _ => BatchAction("", "", List.empty)
   }
 }
 

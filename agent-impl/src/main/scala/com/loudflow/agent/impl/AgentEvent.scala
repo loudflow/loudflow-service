@@ -30,10 +30,10 @@ object AgentEvent {
   val Tag: AggregateEventShards[AgentEvent] = AggregateEventTag.sharded[AgentEvent](shardCount)
 
   def toAction(event: AgentEvent): ModelAction = event match {
-    case AgentStarted(_, traceId, actions, _) => if (actions.nonEmpty) BatchAction(actions.head.modelId, traceId, actions) else BatchAction("", "", Seq.empty)
-    case AgentStopped(_, traceId, actions) => if (actions.nonEmpty) BatchAction(actions.head.modelId, traceId, actions) else BatchAction("", "", Seq.empty)
-    case AgentAdvanced(_, traceId, actions, _) => if (actions.nonEmpty) BatchAction(actions.head.modelId, traceId, actions) else BatchAction("", "", Seq.empty)
-    case _ => BatchAction("", "", Seq.empty)
+    case AgentStarted(_, traceId, actions) => if (actions.nonEmpty) BatchAction(actions.head.modelId, traceId, actions) else BatchAction("", "", List.empty)
+    case AgentStopped(_, traceId, actions) => if (actions.nonEmpty) BatchAction(actions.head.modelId, traceId, actions) else BatchAction("", "", List.empty)
+    case AgentAdvanced(_, traceId, actions) => if (actions.nonEmpty) BatchAction(actions.head.modelId, traceId, actions) else BatchAction("", "", List.empty)
+    case _ => BatchAction("", "", List.empty)
   }
 }
 
@@ -55,12 +55,12 @@ object AgentDestroyed { implicit val format: Format[AgentDestroyed] = Json.forma
    Control Events
 ************************************************************************ */
 
-final case class AgentStarted(agentId: String, traceId: String, actions: Seq[ModelAction], calls: Int) extends AgentEvent {
+final case class AgentStarted(agentId: String, traceId: String, actions: List[ModelAction]) extends AgentEvent {
   val eventType = "agent-started"
 }
 object AgentStarted { implicit val format: Format[AgentStarted] = Json.format }
 
-final case class AgentStopped(agentId: String, traceId: String, actions: Seq[ModelAction]) extends AgentEvent {
+final case class AgentStopped(agentId: String, traceId: String, actions: List[ModelAction]) extends AgentEvent {
   val eventType = "agent-stopped"
 }
 object AgentStopped { implicit val format: Format[AgentStopped] = Json.format }
@@ -75,7 +75,7 @@ final case class AgentResumed(agentId: String, traceId: String) extends AgentEve
 }
 object AgentResumed { implicit val format: Format[AgentResumed] = Json.format }
 
-final case class AgentAdvanced(agentId: String, traceId: String, actions: Seq[ModelAction], calls: Int) extends AgentEvent {
+final case class AgentAdvanced(agentId: String, traceId: String, actions: List[ModelAction]) extends AgentEvent {
   val eventType = "agent-advanced"
 }
 object AgentAdvanced { implicit val format: Format[AgentAdvanced] = Json.format }

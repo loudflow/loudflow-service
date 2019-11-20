@@ -15,28 +15,18 @@
 ************************************************************************ */
 package com.loudflow.simulation.api
 
-import play.api.libs.json.{Format, Json}
-import com.wix.accord.dsl._
-import com.wix.accord.transform.ValidationTransform
+import com.loudflow.domain.model.GraphState
+import play.api.libs.json._
 import com.loudflow.domain.simulation.SimulationState
 
 final case class ReadSimulationResponse private(data: ReadSimulationResponse.Data)
-
 object ReadSimulationResponse {
   implicit val format: Format[ReadSimulationResponse] = Json.format
-  def apply(id: String, state: SimulationState): ReadSimulationResponse = {
-    new ReadSimulationResponse(ReadSimulationResponse.Data(id, state))
-  }
-  implicit val propertiesValidator: ValidationTransform.TransformedValidator[ReadSimulationResponse] = validator { properties =>
-    properties.data is valid
+  def apply(id: String, state: SimulationState): ReadSimulationResponse = state.model match {
+    case _: GraphState => new ReadSimulationResponse(Data(id, state))
   }
   final case class Data(id: String, attributes: SimulationState) {
     val `type`: String = "simulation"
   }
-  object Data {
-    implicit val format: Format[Data] = Json.format
-    implicit val propertiesValidator: ValidationTransform.TransformedValidator[Data] = validator { properties =>
-      properties.attributes is valid
-    }
-  }
+  object Data { implicit val format: Format[Data] = Json.format }
 }

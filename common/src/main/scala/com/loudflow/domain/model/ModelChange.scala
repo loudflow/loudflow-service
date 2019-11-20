@@ -36,7 +36,7 @@ final case class ModelDestroyedChange(modelId: String, traceId: String) extends 
 }
 object ModelDestroyedChange { implicit val format: Format[ModelDestroyedChange] = Json.format }
 
-final case class EntityAddedChange(modelId: String, traceId: String, entityType: String, kind: String, options: EntityOptions) extends ModelChange {
+final case class EntityAddedChange(modelId: String, traceId: String, kind: String, options: Option[EntityOptions], position: Option[Position]) extends ModelChange {
   val demuxer = "entity-added"
 }
 object EntityAddedChange { implicit val format: Format[EntityAddedChange] = Json.format }
@@ -46,7 +46,7 @@ final case class EntityRemovedChange(modelId: String, traceId: String, entityId:
 }
 object EntityRemovedChange { implicit val format: Format[EntityRemovedChange] = Json.format }
 
-final case class EntityMovedChange(modelId: String, traceId: String, entityId: String, position: Position) extends ModelChange {
+final case class EntityMovedChange(modelId: String, traceId: String, entityId: String, position: Option[Position]) extends ModelChange {
   val demuxer = "entity-moved"
 }
 object EntityMovedChange { implicit val format: Format[EntityMovedChange] = Json.format }

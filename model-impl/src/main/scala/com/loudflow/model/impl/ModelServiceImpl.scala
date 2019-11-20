@@ -20,7 +20,7 @@ import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 import akka.{Done, NotUsed}
 import akka.stream.scaladsl.Flow
-import com.loudflow.domain.model.{ModelChange, ModelType}
+import com.loudflow.domain.model.ModelChange
 import com.lightbend.lagom.scaladsl.api.ServiceCall
 import com.lightbend.lagom.scaladsl.api.broker.Topic
 import com.lightbend.lagom.scaladsl.broker.TopicProducer
@@ -61,7 +61,7 @@ class ModelServiceImpl(simulationService: SimulationService, persistentEntityReg
       log.trace(s"[$traceId] Request body: $request")
       validate(request)
       val command = CreateModel(traceId, request.data.attributes)
-      createPersistentEntity(id, request.data.attributes.modelType).ask(command).map(_ => accepted(id, command))
+      createPersistentEntity(id).ask(command).map(_ => accepted(id, command))
     }
   }
 
@@ -102,11 +102,8 @@ class ModelServiceImpl(simulationService: SimulationService, persistentEntityReg
     case event: ModelEvent => ModelEvent.toChange(event)
   }
 
-  private def createPersistentEntity(id: String, modelType: ModelType.Value): PersistentEntityRef[ModelCommand] = modelType match {
-    case ModelType.Graph =>
-      persistentEntityRegistry.refFor[GraphModelPersistentEntity](id)
-  }
+  private def createPersistentEntity(id: String): PersistentEntityRef[ModelCommand] = persistentEntityRegistry.refFor[ModelPersistentEntity](id)
 
-  private def getPersistentEntity(id: String): PersistentEntityRef[ModelCommand] = persistentEntityRegistry.refFor[ModelPersistentEntity[_]](id)
+  private def getPersistentEntity(id: String): PersistentEntityRef[ModelCommand] = persistentEntityRegistry.refFor[ModelPersistentEntity](id)
 
 }

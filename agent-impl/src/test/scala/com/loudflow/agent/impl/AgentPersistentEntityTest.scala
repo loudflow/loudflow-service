@@ -13,7 +13,7 @@
    file 'LICENSE.txt', which is part of this source code package.
 
 ************************************************************************ */
-package com.loudflow.model.impl
+package com.loudflow.agent.impl
 
 import java.util.UUID
 
@@ -24,20 +24,21 @@ import akka.testkit.TestKit
 import com.lightbend.lagom.scaladsl.testkit.{PersistentEntityTestDriver, ServiceTest}
 import com.lightbend.lagom.scaladsl.playjson.JsonSerializerRegistry
 import com.lightbend.lagom.scaladsl.server.LocalServiceLocator
-import com.loudflow.domain.model.{GraphState, GridProperties, ModelProperties, ModelType, GraphProperties}
+import com.loudflow.domain.agent.{AgentProperties, AgentType, AgentState}
+import com.loudflow.domain.model.{GraphProperties, GridProperties, ModelProperties, ModelType}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpec}
 
-class GraphModelPersistentEntityTest(implicit ec: ExecutionContext) extends WordSpec with Matchers with BeforeAndAfterAll {
+class AgentPersistentEntityTest(implicit ec: ExecutionContext) extends WordSpec with Matchers with BeforeAndAfterAll {
 
-  private val system = ActorSystem("GraphModelPersistentEntityTest", JsonSerializerRegistry.actorSystemSetupFor(ModelSerializerRegistry))
+  private val system = ActorSystem("GraphSimulationPersistentEntityTest", JsonSerializerRegistry.actorSystemSetupFor(AgentSerializerRegistry))
 
   private lazy val server = ServiceTest.startServer(ServiceTest.defaultSetup.withCassandra()) { ctx =>
-    new ModelApplication(ctx) with LocalServiceLocator
+    new AgentApplication(ctx) with LocalServiceLocator
   }
 
-  private def withTestDriver(block: PersistentEntityTestDriver[ModelCommand, ModelEvent, Option[GraphState]] => Unit): Unit = {
+  private def withTestDriver(block: PersistentEntityTestDriver[AgentCommand, AgentEvent, Option[AgentState]] => Unit): Unit = {
     val id = UUID.randomUUID().toString
-    val driver = new PersistentEntityTestDriver(system, new GraphModelPersistentEntity(), id)
+    val driver = new PersistentEntityTestDriver(system, new AgentPersistentEntity()(server.application.persistentEntityRegistry, system, ec), id)
     block(driver)
     driver.getAllIssues should have size 0
   }
@@ -48,14 +49,15 @@ class GraphModelPersistentEntityTest(implicit ec: ExecutionContext) extends Word
     TestKit.shutdownActorSystem(system)
   }
 
-  "GraphModelPersistentEntity" should {
+  "GraphSimulationPersistentEntity" should {
 
-    "handle CreateModel command" in withTestDriver { driver =>
+    "handle CreateSimulation command" in withTestDriver { driver =>
       val traceId = UUID.randomUUID.toString
       val gridProperties = GridProperties(10, 10)
       val graphProperties = GraphProperties(Some(gridProperties))
       val modelProperties = ModelProperties(ModelType.Graph, Some(graphProperties))
-      val outcome = driver.run(CreateModel(traceId, modelProperties))
+      val agentProperties = AgentProperties(AgentType.Random)
+      val outcome = driver.run(CreateAgent(traceId, agentProperties, modelProperties))
       outcome.replies should ===(Done)
     }
 

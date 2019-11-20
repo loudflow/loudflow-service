@@ -48,7 +48,7 @@ object ReadModel { implicit val format: Format[ReadModel] = Json.format }
    Action Commands
 ************************************************************************ */
 
-final case class AddEntity(traceId: String, entityType: EntityType.Value, kind: String, options: EntityOptions) extends ModelCommand with PersistentEntity.ReplyType[Done] {
+final case class AddEntity(traceId: String, kind: String, options: Option[EntityOptions], position: Option[Position]) extends ModelCommand with PersistentEntity.ReplyType[Done] {
   val demuxer = "add-entity"
 }
 object AddEntity { implicit val format: Format[AddEntity] = Json.format }
@@ -58,7 +58,7 @@ final case class RemoveEntity(traceId: String, entityId: String) extends ModelCo
 }
 object RemoveEntity { implicit val format: Format[RemoveEntity] = Json.format }
 
-final case class MoveEntity(traceId: String, entityId: String, position: Position) extends ModelCommand with PersistentEntity.ReplyType[Done] {
+final case class MoveEntity(traceId: String, entityId: String, position: Option[Position]) extends ModelCommand with PersistentEntity.ReplyType[Done] {
   val demuxer = "move-entity"
 }
 object MoveEntity { implicit val format: Format[MoveEntity] = Json.format }
@@ -107,7 +107,7 @@ object ModelCommand {
   def fromAction(action: ModelAction): Seq[ModelCommand with PersistentEntity.ReplyType[Done]] = action match {
     case CreateModelAction(_, traceId, properties) => Seq(CreateModel(traceId, properties))
     case DestroyModelAction(_, traceId) => Seq(DestroyModel(traceId))
-    case AddEntityAction(_, traceId, entityType, kind, options) => Seq(AddEntity(traceId, EntityType.fromString(entityType), kind, options))
+    case AddEntityAction(_, traceId, kind, options, position) => Seq(AddEntity(traceId, kind, options, position))
     case RemoveEntityAction(_, traceId, entityId) => Seq(RemoveEntity(traceId, entityId))
     case MoveEntityAction(_, traceId, entityId, position) => Seq(MoveEntity(traceId, entityId, position))
     case PickEntityAction(_, traceId, entityId, targetId) => Seq(PickEntity(traceId, entityId, targetId))

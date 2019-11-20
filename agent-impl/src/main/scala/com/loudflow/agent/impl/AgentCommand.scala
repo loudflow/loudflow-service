@@ -18,8 +18,9 @@ package com.loudflow.agent.impl
 import akka.Done
 import play.api.libs.json._
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntity
+import com.loudflow.agent.api.ReadAgentResponse
 import com.loudflow.domain.Message
-import com.loudflow.domain.agent.{AgentProperties, AgentState}
+import com.loudflow.domain.agent.AgentProperties
 import com.loudflow.domain.model.{ModelChange, ModelProperties}
 
 sealed trait AgentCommand extends Message {
@@ -40,7 +41,7 @@ final case class DestroyAgent(traceId: String) extends PersistentEntity.ReplyTyp
 }
 object DestroyAgent { implicit val format: Format[DestroyAgent] = Json.format }
 
-final case class ReadAgent(traceId: String) extends PersistentEntity.ReplyType[AgentState] with AgentCommand {
+final case class ReadAgent(traceId: String) extends PersistentEntity.ReplyType[ReadAgentResponse] with AgentCommand {
   val demuxer = "read-agent"
 }
 object ReadAgent { implicit val format: Format[ReadAgent] = Json.format }
@@ -100,10 +101,10 @@ object AgentCommand {
   }
   implicit val writes: Writes[AgentCommand] = Writes { obj =>
     val (jsValue, demuxer) = obj match {
-      case command: CreateAgent   => (Json.toJson(command)(CreateAgent.format), "create-agent")
-      case command: DestroyAgent   => (Json.toJson(command)(DestroyAgent.format), "destroy-agent")
-      case command: ReadAgent   => (Json.toJson(command)(ReadAgent.format), "read-agent")
-      case command: StartAgent   => (Json.toJson(command)(StartAgent.format), "start-agent")
+      case command: CreateAgent => (Json.toJson(command)(CreateAgent.format), "create-agent")
+      case command: DestroyAgent => (Json.toJson(command)(DestroyAgent.format), "destroy-agent")
+      case command: ReadAgent => (Json.toJson(command)(ReadAgent.format), "read-agent")
+      case command: StartAgent => (Json.toJson(command)(StartAgent.format), "start-agent")
       case command: StopAgent => (Json.toJson(command)(StopAgent.format), "stop-agent")
       case command: PauseAgent => (Json.toJson(command)(PauseAgent.format), "pause-agent")
       case command: ResumeAgent => (Json.toJson(command)(ResumeAgent.format), "resume-agent")

@@ -18,84 +18,62 @@ package com.loudflow.domain.model
 import java.util.UUID
 
 import cats.effect.IO
-import cats.data.{State => StateMonad}
 import scalax.collection.mutable.{Graph => ScalaGraph}
 import scalax.collection.GraphPredef.EdgeLikeIn
 import scalax.collection.edge.Implicits._
 import com.loudflow.util.shuffle
 
-trait Graph extends Model[GraphState] {
+trait Graph {
 
   /* ************************************************************************
      PUBLIC METHODS
   ************************************************************************ */
 
-  def create(properties: ModelProperties): StateMonad[GraphState, Unit] = StateMonad { state =>
-    properties.graph.flatMap(_.grid) match {
-      case Some(gridProperties) =>
-        (GraphState(state.properties).copy(graph = Graph.buildPositionLayer(gridProperties)), ())
-      case None =>
-        (GraphState(state.properties), ())
-    }
+  def createGraph(id: String, properties: ModelProperties): GraphState = properties.graph.flatMap(_.grid) match {
+    case Some(gridProperties) => GraphState(id, properties).copy(graph = Graph.buildPositionLayer(gridProperties))
+    case None => GraphState(id, properties)
   }
 
-  def destroy(): StateMonad[GraphState, Unit] = StateMonad { state =>
-    (GraphState(state.properties), ())
+  def destroyGraph(state: GraphState): GraphState = GraphState(state.id, state.properties)
+
+  def updateGraph(change: ModelChange, state: GraphState): GraphState = change match {
+    case ModelCreatedChange(modelId, _, properties) => createGraph(modelId, properties)
+    case ModelDestroyedChange(_, _) => destroyGraph(state)
+    case EntityAddedChange(_, _, kind, options, position) => addToGraph(kind, options, position, state)
+    case EntityRemovedChange(_, _, entityId) => removeFromGraph(entityId, state)
+    case EntityMovedChange(_, _, entityId, position) => moveInGraph(entityId, position, state)
+    case _: EntityDroppedChange => state
+    case _: EntityPickedChange => state
   }
 
-  def add(entityType: EntityType.Value, kind: String): StateMonad[GraphState, Unit] = StateMonad { state =>
-    (add(entityType, kind, state), ())
+  def addToGraph(kind: String, options: Option[EntityOptions] = None, position: Option[Position] = None, state: GraphState): GraphState = options match {
+    case Some(o) =>
+      position match {
+        case Some(p) => add(kind, o, p, state)
+        case None => add(kind, o, state)
+      }
+    case None =>
+      position match {
+        case Some(p) => add(kind, p, state)
+        case None => add(kind, state)
+      }
   }
 
-  def add(entityType: EntityType.Value, kind: String, options: EntityOptions): StateMonad[GraphState, Unit] = StateMonad { state =>
-    (add(entityType, kind, options, state), ())
+  def moveInGraph(entityId: String, position: Option[Position] = None, state: GraphState): GraphState = state.getEntity(entityId) match {
+    case Some(e) =>
+      position match {
+        case Some(p) => move(e, p, state)
+        case None => move(e, state)
+      }
+    case None => state
   }
 
-  def add(entityType: EntityType.Value, kind: String, options: EntityOptions, p: Position): StateMonad[GraphState, Unit] = StateMonad { state =>
-    (add(entityType, kind, options, p, state), ())
+  def removeFromGraph(entityId: String, state: GraphState): GraphState = state.getEntity(entityId) match {
+    case Some(e) => remove(e, state)
+    case None => state
   }
 
-  def move(entityId: String): StateMonad[GraphState, Unit] = StateMonad { state =>
-    getEntity(entityId, state) match {
-      case Some(e) =>
-        randomMovablePosition(e, state) match {
-          case Some(p) => (move(e, p, state), ())
-          case None => (state, ())
-        }
-      case None => (state, ())
-    }
-  }
-
-  def move(entityId: String, p: Position): StateMonad[GraphState, Unit] = StateMonad { state =>
-    getEntity(entityId, state) match {
-      case Some(e) => (move(e, p, state), ())
-      case None => (state, ())
-    }
-  }
-
-  def remove(entityId: String): StateMonad[GraphState, Unit] = StateMonad { state =>
-    getEntity(entityId, state) match {
-      case Some(e) =>(remove(e, state), ())
-      case None => (state, ())
-    }
-  }
-
-  def allEntities(state: GraphState): Set[Entity] = Graph.allEntities(state.graph)
-
-  def getEntity(entityId: String, state: GraphState): Option[Entity] = Graph.allEntities(state.graph).find(_.id == entityId)
-
-  def findEntities(entityType: EntityType.Value, kind: String, state: GraphState): Set[Entity] = Graph.findEntities(entityType, kind, state.graph)
-
-  def randomAddablePosition(e: Entity, state: GraphState): Option[Position] =
-    shuffle(Graph.allPositions(state.graph).toSeq, state.random).find(p => e.shiftCluster(p).forall(isAddable(e, _, state)))
-
-  def randomMovablePosition(entityId: String, state: GraphState): Option[Position] =
-    getEntity(entityId, state).flatMap(randomMovablePosition(_, state))
-
-  def randomMovablePosition(e: Entity, state: GraphState): Option[Position] =
-    shuffle(Graph.allPositions(state.graph).toSeq, state.random).find(p => e.shiftCluster(p).forall(p => isAddable(e, p, state) && isMovable(e, p, state)))
-
-  def display(mapper: Option[Entity] => String, state: GraphState): IO[Unit] =
+  def asciiDisplayGraph(mapper: Option[Entity] => String, state: GraphState): IO[Unit] =
     state.gridProperties match {
       case Some(gridProperties) =>
         if (gridProperties.zCount > 0) {
@@ -130,24 +108,23 @@ trait Graph extends Model[GraphState] {
      PRIVATE METHODS: VALIDATION
   ************************************************************************ */
 
-  private def isAddable(e: Entity, p: Position, state: GraphState): Boolean = isConcurrencyAllowed(e, p, allowMove = false, state) && isProximityAllowed(e, p, state)
+  private def isAddable(e: Entity, p: Position, state: GraphState): Boolean = isInteractionAllowed(e, p, allowMove = false, state) && isProximityAllowed(e, p, state)
 
-  private def isMovable(e: Entity, p: Position, state: GraphState): Boolean = isConcurrencyAllowed(e, p, allowMove = true, state) && isProximityAllowed(e, p, state)
+  private def isMovable(e: Entity, p: Position, state: GraphState): Boolean = isInteractionAllowed(e, p, allowMove = true, state) && isProximityAllowed(e, p, state)
 
   private def isGrowthAllowed(e: Entity, state: GraphState): Boolean =
-    state.entityProperties(e.entityType, e.kind) match {
-      case Some(entityProperties) => entityProperties.population.range.contains(Graph.findEntities(e.entityType, e.kind, state.graph).size)
+    state.entityProperties(e.kind) match {
+      case Some(entityProperties) => entityProperties.population.range.contains(Graph.findEntities(e.kind, state.graph).size)
       case None => false
     }
 
-  private def isConcurrencyAllowed(e: Entity, p: Position, allowMove: Boolean, state: GraphState): Boolean = {
+  private def isInteractionAllowed(e: Entity, p: Position, allowMove: Boolean, state: GraphState): Boolean = {
     e.shiftCluster(p).forall(point => {
-      Graph.findEntities(point, state.graph).forall(targetEntity => {
-        state.entityProperties(e.entityType, e.kind) match {
+      Graph.findEntities(point, state.graph).forall(target => {
+        state.entityProperties(e.kind) match {
           case Some(entityProperties) =>
-            entityProperties.concurrence
-              .filter(concurrence => concurrence.entityType == targetEntity.entityType && concurrence.kind == targetEntity.kind)
-              .forall(concurrence => (concurrence.behavior != ConcurrenceBehavior.Block) && (allowMove || (concurrence.behavior != ConcurrenceBehavior.Move)))
+            entityProperties.interactionProperties(target.kind)
+              .forall(interactionProperties => (interactionProperties.result != InteractionResult.ActorBlocked) && (allowMove || (interactionProperties.result != InteractionResult.TargetMoved)))
           case None => false
         }
       })
@@ -156,10 +133,10 @@ trait Graph extends Model[GraphState] {
 
   private def isProximityAllowed(e: Entity, p: Position, state: GraphState): Boolean =
     e.shiftCluster(p).forall(point => {
-      state.entityProperties(e.entityType, e.kind) match {
+      state.entityProperties(e.kind) match {
         case Some(entityProperties) =>
           entityProperties.proximity.forall(proximity => {
-            Graph.findEntities(proximity.entityType, proximity.kind, state.graph).forall(targetEntity => {
+            Graph.findEntities(proximity.kind, state.graph).forall(targetEntity => {
               Graph.findPositions(targetEntity, state.graph).forall(targetPoint => {
                 point.distanceFrom(targetPoint) > proximity.distance
               })
@@ -172,43 +149,64 @@ trait Graph extends Model[GraphState] {
   private def isMotionAllowed(e: Entity, p: Position, state: GraphState): Boolean =
     e.shiftCluster(p).forall(point => {
       Graph.findPositions(e, state.graph).forall(bodyPoint => {
-        state.entityProperties(e.entityType, e.kind) match {
+        state.entityProperties(e.kind) match {
           case Some(entityProperties) => entityProperties.motion.distance >= point.distanceFrom(bodyPoint)
           case None => false
         }
       })
     })
 
+  private def randomAddablePosition(e: Entity, state: GraphState): Option[Position] =
+    shuffle(Graph.allPositions(state.graph).toSeq, state.random).find(p => e.shiftCluster(p).forall(isAddable(e, _, state)))
+
+  private def randomMovablePosition(e: Entity, state: GraphState): Option[Position] =
+    shuffle(Graph.allPositions(state.graph).toSeq, state.random).find(p => e.shiftCluster(p).forall(p => isAddable(e, p, state) && isMovable(e, p, state)))
+
   /* ************************************************************************
      PRIVATE METHODS: ENTITY
   ************************************************************************ */
 
-  private def add(entityType: EntityType.Value, kind: String, state: GraphState): GraphState = {
-    state.properties.entityProperties(entityType, kind) match {
+  private def add(kind: String, state: GraphState): GraphState =
+    state.properties.entityProperties(kind) match {
       case Some(properties) =>
-        add(entityType, kind, EntityOptions(properties, state.random), state.copy(seed = state.random.seed.get()))
-      case None => state
+        add(kind, EntityOptions(properties, state.random), state.copy(seed = state.random.seed.get()))
+      case None =>
+        add(kind, EntityOptions(), state)
     }
-  }
 
-  private def add(entityType: EntityType.Value, kind: String, options: EntityOptions, state: GraphState): GraphState =
-    add(Entity(entityType, kind, options), state)
+  private def add(kind: String, options: EntityOptions, state: GraphState): GraphState =
+    add(Entity(kind, options), state)
 
-  private def add(entityType: EntityType.Value, kind: String, options: EntityOptions, p: Position, state: GraphState): GraphState =
-    add(Entity(entityType, kind, options), p, state)
+  private def add(kind: String, p: Position, state: GraphState): GraphState =
+    state.properties.entityProperties(kind) match {
+      case Some(properties) =>
+        add(kind, EntityOptions(properties, state.random), p, state.copy(seed = state.random.seed.get()))
+      case None =>
+        add(kind, EntityOptions(), p, state)
+    }
 
-  private def add(e: Entity, state: GraphState): GraphState = {
+  private def add(kind: String, options: EntityOptions, p: Position, state: GraphState): GraphState =
+    add(Entity(kind, options), p, state)
+
+  private def add(e: Entity, state: GraphState): GraphState =
     randomAddablePosition(e, state) match {
       case Some(p) => add(e, p, state)
       case None => state
     }
-  }
 
   private def add(e: Entity, p: Position, state: GraphState): GraphState =
     if (isGrowthAllowed(e, state) && isAddable(e, p, state)) {
       val modifiedGraph = Graph.addEntity(e, p, state.graph)
       state.copy(graph = modifiedGraph)
     } else state
+
+  private def move(e: Entity, state: GraphState): GraphState =
+    randomMovablePosition(e, state) match {
+      case Some(p) =>
+        val modifiedGraph = Graph.moveEntity(e, p, state.graph)
+        state.copy(graph = modifiedGraph)
+      case None => state
+    }
 
   private def move(e: Entity, p: Position, state: GraphState): GraphState =
     if (isMotionAllowed(e, p, state) && isMovable(e, p, state)) {
@@ -336,8 +334,7 @@ object Graph {
       case None => Set.empty[Entity]
     }
 
-  private def findEntities(entityType: EntityType.Value, kind: String, g: G): Set[Entity] =
-    allEntities(g).filter(entity => entity.entityType == entityType && entity.kind == kind)
+  private def findEntities(kind: String, g: G): Set[Entity] = allEntities(g).filter(_.kind == kind)
 
   private def addEntity(e: Entity, p: Position, g: G): G = {
     g += e

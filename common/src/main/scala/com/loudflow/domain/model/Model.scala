@@ -15,26 +15,36 @@
 ************************************************************************ */
 package com.loudflow.domain.model
 
-import cats.data.{State => StateMonad}
-import org.slf4j.Logger
+import cats.effect.IO
 
-trait Model[S <: ModelState] {
+trait Model extends Graph {
 
-  implicit def log: Logger
+  def create(id: String, properties: ModelProperties): ModelState = properties.modelType match {
+    case ModelType.Graph => createGraph(id, properties)
+  }
 
-  def create(properties: ModelProperties): StateMonad[S, Unit]
-  def destroy(): StateMonad[S, Unit]
-  def add(entityType: EntityType.Value, kind: String): StateMonad[S, Unit]
-  def add(entityType: EntityType.Value, kind: String, options: EntityOptions): StateMonad[S, Unit]
-  def add(entityType: EntityType.Value, kind: String, options: EntityOptions, position: Position): StateMonad[S, Unit]
-  def move(entityId: String): StateMonad[S, Unit]
-  def move(entityId: String, position: Position): StateMonad[S, Unit]
-  def remove(entityId: String): StateMonad[S, Unit]
-}
+  def destroy(state: ModelState): ModelState = state match {
+    case s: GraphState => destroyGraph(s)
+  }
 
-object Model {
+  def update(change: ModelChange, state: ModelState): ModelState = state match {
+    case s: GraphState => updateGraph(change, s)
+  }
 
-  def getStateMonad[S <: ModelState, T](value: T): StateMonad[S, T] = StateMonad.pure[S, T](value)
-  def getStateMonad[S <: ModelState]: StateMonad[S, Unit] = getStateMonad[S, Unit](())
+  def add(kind: String, options: Option[EntityOptions] = None, position: Option[Position] = None, state: ModelState): ModelState = state match {
+    case s: GraphState => addToGraph(kind, options, position, s)
+  }
+
+  def move(entityId: String, position: Option[Position], state: ModelState): ModelState = state match {
+    case s: GraphState => moveInGraph(entityId, position, s)
+  }
+
+  def remove(entityId: String, state: ModelState): ModelState = state match {
+    case s: GraphState => removeFromGraph(entityId, s)
+  }
+
+  def asciiDisplay(mapper: Option[Entity] => String, state: ModelState): IO[Unit] = state match {
+    case s: GraphState => asciiDisplayGraph(mapper, s)
+  }
 
 }

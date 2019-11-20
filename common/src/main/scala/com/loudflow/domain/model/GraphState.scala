@@ -18,7 +18,7 @@ package com.loudflow.domain.model
 import com.loudflow.domain.model.Graph.{G, buildEntityLayer, Label, emptyGraph}
 import play.api.libs.json.{JsSuccess, Format, Reads, Writes, JsValue, Json}
 
-final case class GraphState(properties: ModelProperties, seed: Long, graph: G = emptyGraph) extends ModelState {
+final case class GraphState(id: String, properties: ModelProperties, seed: Long, graph: G = emptyGraph) extends ModelState {
   val demuxer = "graph"
   def entities: Set[Entity] = graph.nodes.map(_.value).collect{case value: Entity => value}.toSet
   def positions: Set[Position] = graph.nodes.map(_.value).collect{case value: Position => value}.toSet
@@ -33,7 +33,7 @@ final case class GraphState(properties: ModelProperties, seed: Long, graph: G = 
 
 object GraphState {
 
-  def apply(properties: ModelProperties): GraphState = new GraphState(properties, properties.seed)
+  def apply(id: String, properties: ModelProperties): GraphState = new GraphState(id, properties, properties.seed)
 
   private def recoverGraph(entities: Set[Entity], positions: Set[Position], attachments: Set[(String, String)], connections: Set[(String, String)]): G = {
     val g = Graph.buildPositionLayer(positions, connections)
@@ -41,6 +41,7 @@ object GraphState {
   }
 
   implicit val reads: Reads[GraphState] = (json: JsValue) => {
+    val id = (json \ "id").as[String]
     val properties = (json \ "properties").as[ModelProperties]
     val seed = (json \ "seed").as[Long]
     val entities = (json \ "entities").as[Set[Entity]]
@@ -48,10 +49,11 @@ object GraphState {
     val attachments = (json \ "attachments").as[Set[(String, String)]]
     val connections = (json \ "connections").as[Set[(String, String)]]
     val graph = recoverGraph(entities, positions, attachments, connections)
-    JsSuccess(new GraphState(properties, seed, graph))
+    JsSuccess(new GraphState(id, properties, seed, graph))
   }
 
   implicit val writes: Writes[GraphState] = (state: GraphState) => Json.obj(
+    "id" -> state.id,
     "properties" -> state.properties,
     "seed" -> state.seed,
     "entities" -> state.entities,

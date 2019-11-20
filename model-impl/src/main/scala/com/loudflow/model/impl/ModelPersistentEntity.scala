@@ -15,26 +15,94 @@
 ************************************************************************ */
 package com.loudflow.model.impl
 
+import akka.Done
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntity
-import cats.data.{State => StateMonad}
-import com.loudflow.domain.model.ModelState
+import org.slf4j.{Logger, LoggerFactory}
+import com.loudflow.domain.model.{Model, ModelState}
 
-trait ModelPersistentEntity[S <: ModelState] extends PersistentEntity {
+class ModelPersistentEntity extends PersistentEntity with Model {
+
+  final val log: Logger = LoggerFactory.getLogger(classOf[ModelPersistentEntity])
 
   override type Command = ModelCommand
   override type Event = ModelEvent
-  override type State = Option[S]
+  override type State = Option[ModelState]
 
-  override def initialState: Option[S] = None
+  override def initialState: Option[ModelState] = None
 
   override def behavior: Behavior = {
     case Some(_) => extant
     case None => void
   }
 
-  def void: Actions
-  def extant: Actions
+  def void: Actions = { Actions()
+    .onCommand[CreateModel, Done] {
+      case (CreateModel(traceId, properties), ctx, _) =>
+        log.trace(s"[$traceId] GraphModelPersistentEntity[$entityId][void] received command: CreateModel($properties)")
+        ctx.thenPersist(ModelCreated(entityId, traceId, properties))(_ => ctx.done)
+    }
+    .onEvent {
+      case (ModelCreated(_, traceId, properties), _) =>
+        log.trace(s"[$traceId] GraphModelPersistentEntity[$entityId][void] received event: ModelCreated($properties)")
+        Some(create(entityId, properties))
+    }
+  }
 
-  protected def newState[T](stateMonad: StateMonad[S, T], currentState: State): State = currentState.map(stateMonad.run(_).value._1)
+  def extant: Actions = { Actions()
+    .onCommand[DestroyModel, Done] {
+      case (DestroyModel(traceId), ctx, _) =>
+        log.trace(s"[$traceId] GraphModelPersistentEntity[$entityId][void] received command: DestroyModel()")
+        ctx.thenPersist(ModelDestroyed(entityId, traceId))(_ => ctx.done)
+    }
+    .onCommand[AddEntity, Done] {
+      case (AddEntity(traceId, kind, options, position), ctx, _) =>
+        log.trace(s"[$traceId] GraphModelPersistentEntity[$entityId][void] received command: AddEntity($kind, $options, $position)")
+        ctx.thenPersist(EntityAdded(entityId, traceId, kind, options, position))(_ => ctx.done)
+    }
+    .onCommand[RemoveEntity, Done] {
+      case (RemoveEntity(traceId, id), ctx, _) =>
+        log.trace(s"[$traceId] GraphModelPersistentEntity[$entityId][void] received command: RemoveEntity($id)")
+        ctx.thenPersist(EntityRemoved(entityId, traceId, id))(_ => ctx.done)
+    }
+    .onCommand[MoveEntity, Done] {
+      case (MoveEntity(traceId, id, position), ctx, _) =>
+        log.trace(s"[$traceId] GraphModelPersistentEntity[$entityId][void] received command: MoveEntity($id, $position)")
+        ctx.thenPersist(EntityMoved(entityId, traceId, id, position))(_ => ctx.done)
+    }
+    .onCommand[PickEntity, Done] {
+      case (PickEntity(traceId, id, targetId), ctx, _) =>
+        log.trace(s"[$traceId] GraphModelPersistentEntity[$entityId][void] received command: PickEntity($id, $targetId)")
+        log.warn(s"[$traceId] PickEntity command is not supported.")
+        ctx.done
+    }
+    .onCommand[DropEntity, Done] {
+      case (DropEntity(traceId, id, targetId), ctx, _) =>
+        log.trace(s"[$traceId] GraphModelPersistentEntity[$entityId][void] received command: DropEntity($id, $targetId)")
+        log.warn(s"[$traceId] DropEntity command is not supported.")
+        ctx.done
+    }
+    .onEvent {
+      case (ModelDestroyed(_, traceId), _) =>
+        log.trace(s"[$traceId] GraphModelPersistentEntity[$entityId][void] received event: ModelDestroyed()")
+        None
+    }
+    .onEvent {
+      case (EntityAdded(_, traceId, kind, options, position), state) =>
+        log.trace(s"[$traceId] GraphModelPersistentEntity[$entityId][void] received event: EntityAdded($kind, $options, $position)")
+        state.map(add(kind, options, position, _))
+    }
+    .onEvent {
+      case (EntityRemoved(_, traceId, id), state) =>
+        log.trace(s"[$traceId] GraphModelPersistentEntity[$entityId][void] received event: EntityRemoved($id)")
+        state.map(remove(id, _))
+    }
+    .onEvent {
+      case (EntityMoved(_, traceId, id, position), state) =>
+        log.trace(s"[$traceId] GraphModelPersistentEntity[$entityId][void] received event: EntityMoved($id, $position)")
+        state.map(move(id, position, _))
+    }
+  }
 
 }
+
+

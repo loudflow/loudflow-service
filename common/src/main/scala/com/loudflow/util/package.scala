@@ -1,5 +1,7 @@
 package com.loudflow
 
+import java.util.UUID
+
 import scala.collection.mutable.ArrayBuffer
 
 package object util {
@@ -18,6 +20,7 @@ package object util {
     buf
   }
 
+  def randomId: String = UUID.randomUUID().toString
   def randomSeed: Long = JavaRandom.seedUniquifier ^ System.nanoTime
 
 }

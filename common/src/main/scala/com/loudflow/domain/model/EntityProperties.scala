@@ -22,17 +22,18 @@ import play.api.libs.json.{Format, JsError, JsObject, JsPath, JsString, JsSucces
 
 final case class EntityProperties
 (
-  entityType: EntityType.Value,
   kind: String,
+  category: EntityCategory.Value,
   description: Option[String],
   population: PopulationProperties,
   motion: MotionProperties,
-  concurrence: Set[ConcurrenceProperties],
   proximity: Set[ProximityProperties],
+  interactions: Set[InteractionProperties],
   cluster: Option[ClusterProperties],
-  grouping: Option[Int],
-  score: Option[ScoreProperties]
-)
+  grouping: Option[Int]
+) {
+  def interactionProperties(target: String): Set[InteractionProperties] = interactions.filter(_.target.kind == target)
+}
 
 object EntityProperties {
   implicit val format: Format[EntityProperties] = Json.format
@@ -41,28 +42,28 @@ object EntityProperties {
     properties.motion is valid
     properties.cluster.each is valid
     properties.grouping.each should be > 0
-    properties.score.each is valid
     properties.proximity.each is valid
   }
 }
 
-object EntityType {
+object EntityCategory {
 
   sealed trait Value
 
-  final case object Agent extends Value {
+  final object Agent extends Value {
     val demuxer = "agent"
   }
 
-  final case object Thing extends Value {
+  final object Thing extends Value {
     val demuxer = "thing"
   }
 
   val values: Set[Value] = Set(Agent, Thing)
 
-  def fromString(value: String): Value = value.toLowerCase match {
-    case "agent" => Agent
-    case "thing" => Thing
+  def fromString(value: String): Option[Value] = value.toLowerCase match {
+    case "agent" => Some(Agent)
+    case "thing" => Some(Thing)
+    case _ => None
   }
 
   implicit val reads: Reads[Value] = Reads { json =>
@@ -110,17 +111,7 @@ object MotionProperties {
   }
 }
 
-final case class ScoreProperties(span: Span[Int], decline: Int)
-
-object ScoreProperties {
-  implicit val format: Format[ScoreProperties] = Json.format
-  implicit val propertiesValidator: ValidationTransform.TransformedValidator[ScoreProperties] = validator { properties =>
-    properties.span is valid
-    properties.decline should be >= 0
-  }
-}
-
-final case class ProximityProperties(entityType: EntityType.Value, kind: String, distance: Int)
+final case class ProximityProperties(kind: String, distance: Int)
 object ProximityProperties {
   implicit val format: Format[ProximityProperties] = Json.format
   implicit val propertiesValidator: ValidationTransform.TransformedValidator[ProximityProperties] = validator { properties =>
@@ -128,39 +119,54 @@ object ProximityProperties {
   }
 }
 
-final case class ConcurrenceProperties(entityType: EntityType.Value, kind: String, behavior: ConcurrenceBehavior.Value)
-object ConcurrenceProperties { implicit val format: Format[ConcurrenceProperties] = Json.format }
+final case class InteractionProperties(target: Participant, trigger: Option[Participant], result: InteractionResult.Value = InteractionResult.ActorBlocked, score: Option[Int] = None, scoreDecayRate: Option[Int] = None)
+object InteractionProperties { implicit val format: Format[InteractionProperties] = Json.format }
 
-object ConcurrenceBehavior {
+final case class Participant(kind: String, score: Option[Int], scoreDecayRate: Option[Int])
+object Participant { implicit val format: Format[Participant] = Json.format }
+
+object InteractionResult {
 
   sealed trait Value
-
-  final case object Block extends Value {
-    val valueType = "block"
-  }
-
-  final case object Move extends Value {
-    val valueType = "move"
-  }
-
   final case object Share extends Value {
     val valueType = "share"
   }
+  final case object ActorBlocked extends Value {
+    val valueType = "actor-blocked"
+  }
+  final case object TargetMoved extends Value {
+    val valueType = "target-moved"
+  }
+  final case object ActorRemoved extends Value {
+    val valueType = "actor-removed"
+  }
+  final case object TargetRemoved extends Value {
+    val valueType = "target-removed"
+  }
+  final case object BothRemoved extends Value {
+    val valueType = "both-removed"
+  }
 
-  val values: Seq[Value] = Seq(Block, Move, Share)
+  val values: Seq[Value] = Seq(Share, ActorBlocked, TargetMoved, ActorRemoved, TargetRemoved, BothRemoved)
 
   implicit val reads: Reads[Value] = Reads { json =>
     (JsPath \ "valueType").read[String].reads(json).flatMap {
-      case "block" => JsSuccess(Block)
-      case "move" => JsSuccess(Move)
       case "share" => JsSuccess(Share)
-      case other => JsError(s"Read ConcurrenceBehavior failed due to unknown enumeration value $other.")
+      case "actor-blocked" => JsSuccess(ActorBlocked)
+      case "target-moved" => JsSuccess(TargetMoved)
+      case "actor-removed" => JsSuccess(ActorRemoved)
+      case "target-removed" => JsSuccess(TargetRemoved)
+      case "both-removed" => JsSuccess(BothRemoved)
+      case other => JsError(s"Read ConcurrenceOutcome failed due to unknown enumeration value $other.")
     }
   }
   implicit val writes: Writes[Value] = Writes {
-    case Block => JsObject(Seq("valueType" -> JsString("block")))
-    case Move => JsObject(Seq("valueType" -> JsString("move")))
     case Share => JsObject(Seq("valueType" -> JsString("share")))
+    case ActorBlocked => JsObject(Seq("valueType" -> JsString("actor-blocked")))
+    case TargetMoved => JsObject(Seq("valueType" -> JsString("target-moved")))
+    case ActorRemoved => JsObject(Seq("valueType" -> JsString("actor-removed")))
+    case TargetRemoved => JsObject(Seq("valueType" -> JsString("target-removed")))
+    case BothRemoved => JsObject(Seq("valueType" -> JsString("both-removed")))
   }
 
 }

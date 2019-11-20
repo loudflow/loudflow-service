@@ -16,26 +16,17 @@
 package com.loudflow.agent.api
 
 import com.loudflow.domain.agent.AgentState
+import com.loudflow.domain.model.GraphState
 import play.api.libs.json.{Format, Json}
-import com.wix.accord.dsl._
-import com.wix.accord.transform.ValidationTransform
 
 final case class ReadAgentResponse private(data: ReadAgentResponse.Data)
-
 object ReadAgentResponse {
   implicit val format: Format[ReadAgentResponse] = Json.format
-  def apply(id: String, state: AgentState): ReadAgentResponse = {
-    new ReadAgentResponse(ReadAgentResponse.Data(id, state))
-  }
-  implicit val propertiesValidator: ValidationTransform.TransformedValidator[ReadAgentResponse] = validator { properties =>
-    properties.data is valid
+  def apply(id: String, state: AgentState): ReadAgentResponse = state.model match {
+    case _: GraphState => new ReadAgentResponse(Data(id, state))
   }
   final case class Data(id: String, attributes: AgentState) {
-    val `type`: String = "agent"
+    val `type`: String = "simulation"
   }
-  object Data {
-    implicit val format: Format[Data] = Json.format
-    implicit val propertiesValidator: ValidationTransform.TransformedValidator[Data] = validator { properties =>
-    }
-  }
+  object Data { implicit val format: Format[Data] = Json.format }
 }

@@ -36,7 +36,7 @@ final case class DestroyModelAction(modelId: String, traceId: String) extends Mo
 }
 object DestroyModelAction { implicit val format: Format[DestroyModelAction] = Json.format }
 
-final case class AddEntityAction(modelId: String, traceId: String, entityType: String, kind: String, options: Option[EntityOptions] = None) extends ModelAction {
+final case class AddEntityAction(modelId: String, traceId: String, kind: String, options: Option[EntityOptions] = None, position: Option[Position] = None) extends ModelAction {
   val demuxer = "add-entity"
 }
 object AddEntityAction { implicit val format: Format[AddEntityAction] = Json.format }
@@ -46,7 +46,7 @@ final case class RemoveEntityAction(modelId: String, traceId: String, entityId: 
 }
 object RemoveEntityAction { implicit val format: Format[RemoveEntityAction] = Json.format }
 
-final case class MoveEntityAction(modelId: String, traceId: String, entityId: String, position: Position) extends ModelAction {
+final case class MoveEntityAction(modelId: String, traceId: String, entityId: String, position: Option[Position] = None) extends ModelAction {
   val demuxer = "move-entity"
 }
 object MoveEntityAction { implicit val format: Format[MoveEntityAction] = Json.format }
@@ -61,7 +61,7 @@ final case class DropEntityAction(modelId: String, traceId: String, entityId: St
 }
 object DropEntityAction { implicit val format: Format[DropEntityAction] = Json.format }
 
-final case class BatchAction(modelId: String, traceId: String, actions: Seq[ModelAction]) extends ModelAction {
+final case class BatchAction(modelId: String, traceId: String, actions: List[ModelAction]) extends ModelAction {
   val demuxer = "batch"
   require(actions.forall(!_.isInstanceOf[BatchAction])) // TODO: Find nicer way to prevent nested batches
 }

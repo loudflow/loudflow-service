@@ -25,7 +25,6 @@ import com.loudflow.util.JavaRandom
 
 final case class Entity
 (
-  entityType: EntityType.Value,
   kind: String,
   position: Option[Position],
   options: EntityOptions,
@@ -55,12 +54,11 @@ object Entity {
     if (properties.options.cluster.isDefined) properties.options.cluster.get.length should be > 1
     properties.options.group.each should be > 0
     properties.options.lifeSpan.each should be > 0
-    properties.options.score.each should be > 0
     properties.created should be > 0L
   }
 
-  def apply(entityType: EntityType.Value, kind: String, position: Position, options: EntityOptions): Entity = new Entity(entityType, kind, Some(position), options, Instant.now().toEpochMilli)
-  def apply(entityType: EntityType.Value, kind: String, options: EntityOptions): Entity = new Entity(entityType, kind, None, options, Instant.now().toEpochMilli)
+  def apply(kind: String, position: Position, options: EntityOptions): Entity = new Entity(kind, Some(position), options, Instant.now().toEpochMilli)
+  def apply(kind: String, options: EntityOptions): Entity = new Entity(kind, None, options, Instant.now().toEpochMilli)
 
   def generateCluster(properties: ClusterProperties, random: JavaRandom): Array[Position] =
     if (properties.is3D)
@@ -71,14 +69,13 @@ object Entity {
 
 }
 
-final case class EntityOptions(cluster: Option[Array[Position]] = None, group: Option[Int] = None, lifeSpan: Option[Int] = None, score: Option[Int] = None)
+final case class EntityOptions(cluster: Option[Array[Position]] = None, group: Option[Int] = None, lifeSpan: Option[Int] = None)
 object EntityOptions {
   implicit val format: Format[EntityOptions] = Json.format
   def apply(properties: EntityProperties, random: JavaRandom): EntityOptions = {
     val cluster = properties.cluster.map(Entity.generateCluster(_, random))
     val group = properties.grouping.map(g => random.nextInt(g + 1))
     val lifeSpan = properties.population.lifeSpanRange.map(_.pick(random))
-    val score = properties.score.map(_.span.pick(random))
-    EntityOptions(cluster, group, lifeSpan, score)
+    EntityOptions(cluster, group, lifeSpan)
   }
 }

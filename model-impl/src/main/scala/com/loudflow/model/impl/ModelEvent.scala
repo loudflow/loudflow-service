@@ -31,7 +31,7 @@ object ModelEvent {
   def toChange(event: ModelEvent): ModelChange = event match {
     case ModelCreated(modelId, traceId, properties) => ModelCreatedChange(modelId, traceId, properties)
     case ModelDestroyed(modelId, traceId) => ModelDestroyedChange(modelId, traceId)
-    case EntityAdded(modelId, traceId, entityType, kind, options) => EntityAddedChange(modelId, traceId, entityType.toString, kind, options)
+    case EntityAdded(modelId, traceId, kind, options, position) => EntityAddedChange(modelId, traceId, kind, options, position)
     case EntityRemoved(modelId, traceId, entityId) => EntityRemovedChange(modelId, traceId, entityId)
     case EntityMoved(modelId, traceId, entityId, position) => EntityMovedChange(modelId, traceId, entityId, position)
     case EntityPicked(modelId, traceId, entityId, targetId) => EntityPickedChange(modelId, traceId, entityId, targetId)
@@ -57,7 +57,7 @@ object ModelDestroyed { implicit val format: Format[ModelDestroyed] = Json.forma
    Change Events
 ************************************************************************ */
 
-final case class EntityAdded(modelId: String, traceId: String, entityType: EntityType.Value, kind: String, options: EntityOptions) extends ModelEvent {
+final case class EntityAdded(modelId: String, traceId: String, kind: String, options: Option[EntityOptions], position: Option[Position]) extends ModelEvent {
   val eventType = "entity-added"
 }
 object EntityAdded { implicit val format: Format[EntityAdded] = Json.format }
@@ -67,7 +67,7 @@ final case class EntityRemoved(modelId: String, traceId: String, entityId: Strin
 }
 object EntityRemoved { implicit val format: Format[EntityRemoved] = Json.format }
 
-final case class EntityMoved(modelId: String, traceId: String, entityId: String, position: Position) extends ModelEvent {
+final case class EntityMoved(modelId: String, traceId: String, entityId: String, position: Option[Position]) extends ModelEvent {
   val eventType = "entity-moved"
 }
 object EntityMoved { implicit val format: Format[EntityMoved] = Json.format }
