@@ -15,7 +15,7 @@
 ************************************************************************ */
 package com.loudflow.domain.simulation
 
-import com.loudflow.domain.model.{GraphState, ModelState}
+import com.loudflow.domain.model.ModelState
 import com.loudflow.util.JavaRandom
 import com.wix.accord.transform.ValidationTransform
 

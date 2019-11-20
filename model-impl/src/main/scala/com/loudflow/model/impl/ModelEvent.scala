@@ -16,9 +16,10 @@
 package com.loudflow.model.impl
 
 import play.api.libs.json.{Format, Json}
-import com.lightbend.lagom.scaladsl.persistence.{AggregateEventTag, AggregateEventShards, AggregateEvent}
+import com.lightbend.lagom.scaladsl.persistence.{AggregateEvent, AggregateEventShards, AggregateEventTag}
 import com.loudflow.domain.Message
 import com.loudflow.domain.model._
+import com.loudflow.domain.model.entity.EntityOptions
 
 sealed trait ModelEvent extends AggregateEvent[ModelEvent] with Message {
   def aggregateTag: AggregateEventShards[ModelEvent] = ModelEvent.Tag

@@ -13,15 +13,16 @@
    file 'LICENSE.txt', which is part of this source code package.
 
 ************************************************************************ */
-package com.loudflow.domain.model
+package com.loudflow.domain.model.entity
 
 import java.time.Instant
 
-import play.api.libs.json._
+import com.loudflow.domain.model.graph.GraphLogic.Node
+import com.loudflow.domain.model.{Direction, Position}
+import com.loudflow.util.{JavaRandom, shuffle}
 import com.wix.accord.dsl._
 import com.wix.accord.transform.ValidationTransform
-import com.loudflow.domain.model.Graph.Node
-import com.loudflow.util.JavaRandom
+import play.api.libs.json._
 
 final case class Entity
 (
@@ -32,7 +33,7 @@ final case class Entity
 ) extends Node {
   def shiftCluster(): Array[Position] = options.cluster match {
     case Some(cluster) => position match {
-        case Some(p) => Cluster.shiftCluster(p, cluster)
+        case Some(p) => Entity.shiftCluster(p, cluster)
         case None => cluster
       }
     case None => position match {
@@ -41,7 +42,7 @@ final case class Entity
     }
   }
   def shiftCluster(position: Position): Array[Position] = options.cluster match {
-    case Some(cluster) => Cluster.shiftCluster(position, cluster)
+    case Some(cluster) => Entity.shiftCluster(position, cluster)
     case None => Array(position)
   }
 }
@@ -61,11 +62,41 @@ object Entity {
   def apply(kind: String, options: EntityOptions): Entity = new Entity(kind, None, options, Instant.now().toEpochMilli)
 
   def generateCluster(properties: ClusterProperties, random: JavaRandom): Array[Position] =
-    if (properties.is3D)
-      if (properties.autoGenerate) Cluster.generateCluster(properties, random)
-      else Cluster.generateCluster(properties.locations)
-    else if (properties.autoGenerate) Cluster.generateCluster(properties, random)
-    else Cluster.generateCluster(properties.locations)
+    if (properties.autoGenerate) {
+      val size = properties.size.pick(random)
+      val cluster = (1 to size).foldLeft(List(Position(0, 0)))((acc, _) => {
+        val last = acc.head
+        if (properties.is3D) {
+          shuffle(Direction.cardinal3D.map(direction => {
+            Direction.stepInDirection(last, direction, properties.step)
+          }).toSeq.diff(acc), random).head :: acc
+        } else {
+          shuffle(Direction.cardinal.map(direction => {
+            Direction.stepInDirection(last, direction, properties.step)
+          }).toSeq.diff(acc), random).head :: acc
+        }
+      }).toArray
+      generateCluster(cluster)
+    } else generateCluster(properties.locations)
+
+  def generateCluster(cluster: Array[Position]): Array[Position] = {
+    val center = cluster.map(location1 => {
+      (location1, cluster.map(_.distanceFrom(location1)).sum)
+    }).minBy(_._2)._1
+    cluster.map(_.shift(center))
+  }
+
+  def shiftCluster(position: Position, cluster: Array[Position]): Array[Position] = cluster.map(shiftClusterPoint(position, _))
+
+  def shiftClusterPoint(position: Position, clusterPoint: Position): Position = Position(position.x + clusterPoint.x, position.y + clusterPoint.y, position.z + clusterPoint.z)
+
+  def recoverCluster(positions: Array[Position], center: Position): Array[Position] = positions.length match {
+    case 0 => Array.empty
+    case 1 => Array(recoverClusterPoint(positions(0), center))
+    case _ => positions.map(recoverClusterPoint(_, center))
+  }
+
+  def recoverClusterPoint(position: Position, center: Position): Position = Position(position.x - center.x, position.y - center.y, position.z - center.z)
 
 }
 

@@ -20,6 +20,7 @@ import play.api.libs.json._
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntity
 import com.loudflow.domain.Message
 import com.loudflow.domain.model._
+import com.loudflow.domain.model.entity.EntityOptions
 
 sealed trait ModelCommand extends Message {
   def demuxer: String

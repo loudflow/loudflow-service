@@ -17,35 +17,34 @@ package com.loudflow.domain.model
 
 import java.util.UUID
 
-import org.scalatest.{FunSuite, BeforeAndAfter}
+import com.loudflow.domain.model.entity.Entity
+import com.loudflow.domain.model.graph.{GraphLogic, GraphModelState}
+import org.scalatest.{BeforeAndAfter, FunSuite}
 import org.slf4j.{Logger, LoggerFactory}
 
-class GraphTest extends FunSuite with BeforeAndAfter {
+class GraphLogicTest extends FunSuite with BeforeAndAfter {
 
-  private final val log: Logger = LoggerFactory.getLogger(classOf[GraphTest])
+  private final val log: Logger = LoggerFactory.getLogger(classOf[GraphLogicTest])
 
   val id: String = UUID.randomUUID().toString
   val gridProperties = GridProperties(10, 10)
   val graphProperties = GraphProperties(Some(gridProperties))
   val modelProperties = ModelProperties(ModelType.Graph, Some(graphProperties))
-  val state: GraphState = GraphState(id, modelProperties)
+  val state: GraphModelState = GraphModelState(id, modelProperties)
 
-/*
-  test("new grid state has no occupants") {
-    assert(Grid.cells[Occupied](state).isEmpty)
+  def asciiMapper(entity: Option[Entity]): String = entity match {
+    case Some(e) => e.kind match {
+      case "agent::random" => "A"
+      case "thing::tile" => "T"
+      case _ => "?"
+    }
+    case None => "X"
   }
 
-  test("add one occupant") {
-    val id: String = UUID.randomUUID().toString
-    val occupant = Agent(id)
-    val newState = Grid.add(occupant, Vacant(1, 1)).run(state).value._1
-    val occupiedCells = Grid.cells[Occupied](newState)
-    state.display(_ => "X")
-    assert(occupiedCells.length == 1)
-    assert(occupiedCells.head.occupant.id == occupant.id)
+  test("build position layer from grid properties") {
+    val graph = GraphLogic.buildPositionLayer(gridProperties)
+    GraphLogic.displayGridAsAscii(graph, gridProperties, asciiMapper).unsafeRunSync()
+    assert(graph.nonEmpty)
+    assert(graph.nodes.length == 100)
   }
-*/
-
-  test ("test graph state") (pending)
-
 }

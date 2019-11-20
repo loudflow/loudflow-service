@@ -26,7 +26,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.{Duration, MILLISECONDS}
 
-class SimulationPersistentEntity()(implicit val persistentEntityRegistry: PersistentEntityRegistry, val system: ActorSystem, val ec: ExecutionContext) extends PersistentEntity with Model {
+class SimulationPersistentEntity()(implicit val persistentEntityRegistry: PersistentEntityRegistry, val system: ActorSystem, val ec: ExecutionContext) extends PersistentEntity {
 
   final val log: Logger = LoggerFactory.getLogger(classOf[SimulationPersistentEntity])
   private final val ref: PersistentEntityRef[SimulationCommand] = persistentEntityRegistry.refFor[SimulationPersistentEntity](entityId)
@@ -186,7 +186,7 @@ class SimulationPersistentEntity()(implicit val persistentEntityRegistry: Persis
     .onEvent {
       case (SimulationUpdated(_, traceId, changeEvent), state) =>
         log.trace(s"[$traceId] SimulationPersistentEntity[$entityId][running] received event: SimulationUpdated($changeEvent)")
-        state.map(s => s.copy(model = update(changeEvent, s.model)))
+        state.map(s => s.copy(model = ModelState.update(changeEvent, s.model)))
     }
   }
 

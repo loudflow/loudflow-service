@@ -15,6 +15,9 @@
 ************************************************************************ */
 package com.loudflow.domain.model
 
+import cats.effect.IO
+import com.loudflow.domain.model.entity.{Entity, EntityOptions, EntityProperties}
+import com.loudflow.domain.model.graph.GraphModelState
 import com.loudflow.util.JavaRandom
 import com.wix.accord.dsl._
 import com.wix.accord.transform.ValidationTransform
@@ -34,23 +37,56 @@ trait ModelState {
 }
 
 object ModelState {
-  implicit val propertiesValidator: ValidationTransform.TransformedValidator[ModelState] = validator { properties =>
-    properties.properties is valid
-  }
-  def apply(id: String, properties: ModelProperties): ModelState = properties.modelType match {
-    case ModelType.Graph => GraphState(id, properties)
-  }
+
   implicit val reads: Reads[ModelState] = {
     (JsPath \ "demuxer").read[String].flatMap {
-      case "graph" => implicitly[Reads[GraphState]].map(identity)
+      case "graph" => implicitly[Reads[GraphModelState]].map(identity)
       case other => Reads(_ => JsError(s"Read Model.State failed due to unknown type $other."))
     }
   }
+
   implicit val writes: Writes[ModelState] = Writes { obj =>
     val (jsValue, demuxer) = obj match {
-      case command: GraphState => (Json.toJson(command)(GraphState.format), "graph")
+      case command: GraphModelState => (Json.toJson(command)(GraphModelState.format), "graph")
     }
     jsValue.transform(JsPath.json.update((JsPath \ 'demuxer).json.put(JsString(demuxer)))).get
   }
+
+  implicit val propertiesValidator: ValidationTransform.TransformedValidator[ModelState] = validator { properties =>
+    properties.properties is valid
+  }
+
+  def apply(id: String, properties: ModelProperties): ModelState = properties.modelType match {
+    case ModelType.Graph => GraphModelState(id, properties)
+  }
+
+  /* ************************************************************************
+     PUBLIC METHODS
+  ************************************************************************ */
+
+  def create(id: String, properties: ModelProperties): ModelState = properties.modelType match {
+    case ModelType.Graph => GraphModelState.create(id, properties)
+  }
+
+  def destroy(state: ModelState): ModelState = state match {
+    case s: GraphModelState => GraphModelState.destroy(s)
+  }
+
+  def update(change: ModelChange, state: ModelState): ModelState = state match {
+    case s: GraphModelState => GraphModelState.update(change, s)
+  }
+
+  def add(kind: String, options: Option[EntityOptions] = None, position: Option[Position] = None, state: ModelState): ModelState = state match {
+    case s: GraphModelState => GraphModelState.add(kind, options, position, s)
+  }
+
+  def move(entityId: String, position: Option[Position], state: ModelState): ModelState = state match {
+    case s: GraphModelState => GraphModelState.move(entityId, position, s)
+  }
+
+  def remove(entityId: String, state: ModelState): ModelState = state match {
+    case s: GraphModelState => GraphModelState.remove(entityId, s)
+  }
+
 }
 

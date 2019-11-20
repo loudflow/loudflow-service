@@ -85,7 +85,7 @@ class JavaRandom implements java.io.Serializable {
      * (The specs for the methods in this class describe the ongoing
      * computation of this value.)
      */
-    public final AtomicLong seed;
+    public AtomicLong seed;
 
     private static final long multiplier = 0x5DEECE66DL;
     private static final long addend = 0xBL;
@@ -1191,7 +1191,8 @@ class JavaRandom implements java.io.Serializable {
         if (seedVal < 0)
             throw new java.io.StreamCorruptedException(
                     "Random: invalid seed");
-        resetSeed(seedVal);
+        seed = new AtomicLong(seedVal);
+        // resetSeed(seedVal);
         nextNextGaussian = fields.get("nextNextGaussian", 0.0);
         haveNextNextGaussian = fields.get("haveNextNextGaussian", false);
     }
@@ -1215,6 +1216,7 @@ class JavaRandom implements java.io.Serializable {
     }
 
     // Support for resetting seed while deserializing
+/*
     private static final Unsafe unsafe = Unsafe.getUnsafe();
     private static final long seedOffset;
     static {
@@ -1226,4 +1228,5 @@ class JavaRandom implements java.io.Serializable {
     private void resetSeed(long seedVal) {
         unsafe.putObjectVolatile(this, seedOffset, new AtomicLong(seedVal));
     }
+*/
 }

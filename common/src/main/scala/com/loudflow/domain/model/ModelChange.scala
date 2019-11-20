@@ -17,6 +17,7 @@ package com.loudflow.domain.model
 
 import play.api.libs.json._
 import com.loudflow.domain.Message
+import com.loudflow.domain.model.entity.EntityOptions
 
 sealed trait ModelChange extends Message {
   def modelId: String

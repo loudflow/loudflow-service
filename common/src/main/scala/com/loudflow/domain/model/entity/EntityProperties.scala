@@ -13,12 +13,13 @@
    file 'LICENSE.txt', which is part of this source code package.
 
 ************************************************************************ */
-package com.loudflow.domain.model
+package com.loudflow.domain.model.entity
 
+import com.loudflow.domain.model.Position
 import com.loudflow.util.Span
 import com.wix.accord.dsl._
 import com.wix.accord.transform.ValidationTransform
-import play.api.libs.json.{Format, JsError, JsObject, JsPath, JsString, JsSuccess, Json, Reads, Writes}
+import play.api.libs.json._
 
 final case class EntityProperties
 (

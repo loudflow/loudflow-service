@@ -15,7 +15,7 @@
 ************************************************************************ */
 package com.loudflow.domain.agent
 
-import com.loudflow.domain.model.{GraphState, ModelState}
+import com.loudflow.domain.model.ModelState
 import com.loudflow.util.JavaRandom
 import com.wix.accord.dsl._
 import com.wix.accord.transform.ValidationTransform

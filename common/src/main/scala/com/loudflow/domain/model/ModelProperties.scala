@@ -15,6 +15,7 @@
 ************************************************************************ */
 package com.loudflow.domain.model
 
+import com.loudflow.domain.model.entity.EntityProperties
 import com.loudflow.util.JavaRandom
 import com.wix.accord.dsl._
 import com.wix.accord.transform.ValidationTransform

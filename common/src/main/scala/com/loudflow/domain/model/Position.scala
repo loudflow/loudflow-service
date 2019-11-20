@@ -16,7 +16,7 @@
 package com.loudflow.domain.model
 
 import play.api.libs.json._
-import com.loudflow.domain.model.Graph.Node
+import com.loudflow.domain.model.graph.GraphLogic.Node
 import com.loudflow.util.Span
 
 final case class Position(x: Double, y: Double, z: Double = 0.0, index: Int = 0) extends Node {

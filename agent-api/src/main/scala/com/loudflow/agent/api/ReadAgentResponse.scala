@@ -16,14 +16,14 @@
 package com.loudflow.agent.api
 
 import com.loudflow.domain.agent.AgentState
-import com.loudflow.domain.model.GraphState
+import com.loudflow.domain.model.graph.GraphModelState
 import play.api.libs.json.{Format, Json}
 
 final case class ReadAgentResponse private(data: ReadAgentResponse.Data)
 object ReadAgentResponse {
   implicit val format: Format[ReadAgentResponse] = Json.format
   def apply(id: String, state: AgentState): ReadAgentResponse = state.model match {
-    case _: GraphState => new ReadAgentResponse(Data(id, state))
+    case _: GraphModelState => new ReadAgentResponse(Data(id, state))
   }
   final case class Data(id: String, attributes: AgentState) {
     val `type`: String = "simulation"

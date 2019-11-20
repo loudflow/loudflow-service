@@ -18,9 +18,9 @@ package com.loudflow.model.impl
 import akka.Done
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntity
 import org.slf4j.{Logger, LoggerFactory}
-import com.loudflow.domain.model.{Model, ModelState}
+import com.loudflow.domain.model.ModelState
 
-class ModelPersistentEntity extends PersistentEntity with Model {
+class ModelPersistentEntity extends PersistentEntity {
 
   final val log: Logger = LoggerFactory.getLogger(classOf[ModelPersistentEntity])
 
@@ -44,7 +44,7 @@ class ModelPersistentEntity extends PersistentEntity with Model {
     .onEvent {
       case (ModelCreated(_, traceId, properties), _) =>
         log.trace(s"[$traceId] GraphModelPersistentEntity[$entityId][void] received event: ModelCreated($properties)")
-        Some(create(entityId, properties))
+        Some(ModelState.create(entityId, properties))
     }
   }
 
@@ -89,17 +89,17 @@ class ModelPersistentEntity extends PersistentEntity with Model {
     .onEvent {
       case (EntityAdded(_, traceId, kind, options, position), state) =>
         log.trace(s"[$traceId] GraphModelPersistentEntity[$entityId][void] received event: EntityAdded($kind, $options, $position)")
-        state.map(add(kind, options, position, _))
+        state.map(ModelState.add(kind, options, position, _))
     }
     .onEvent {
       case (EntityRemoved(_, traceId, id), state) =>
         log.trace(s"[$traceId] GraphModelPersistentEntity[$entityId][void] received event: EntityRemoved($id)")
-        state.map(remove(id, _))
+        state.map(ModelState.remove(id, _))
     }
     .onEvent {
       case (EntityMoved(_, traceId, id, position), state) =>
         log.trace(s"[$traceId] GraphModelPersistentEntity[$entityId][void] received event: EntityMoved($id, $position)")
-        state.map(move(id, position, _))
+        state.map(ModelState.move(id, position, _))
     }
   }
 
