@@ -23,6 +23,8 @@ import com.loudflow.domain.model._
 import com.loudflow.domain.model.entity.Entity
 import com.loudflow.util.Span
 import org.slf4j.{Logger, LoggerFactory}
+
+import scala.collection.mutable
 // import scalax.collection.edge.{LBase, LDiEdge, LUnDiEdge}
 
 object GraphLogic {
@@ -137,16 +139,17 @@ object GraphLogic {
     g
   }
 
-  def displayGridAsAscii(g: Graph, gridProperties: GridProperties, mapper: Option[Entity] => String): IO[Unit] = IO {
+  def displayGridAsAscii(g: Graph, gridProperties: GridProperties, title: String, mapper: Option[Entity] => String): IO[Unit] = IO {
     if (gridProperties.zCount > 0) {
       for {
         z <- 1 to gridProperties.zCount
-      } yield display2DGridAsAscii(g, gridProperties, Some(z), mapper)
+      } yield display2DGridAsAscii(g, gridProperties, title, Some(z), mapper)
     }
-    else display2DGridAsAscii(g, gridProperties, None, mapper)
+    else display2DGridAsAscii(g, gridProperties, title, None, mapper)
   }
 
-  private def display2DGridAsAscii(g: Graph, gridProperties: GridProperties, z: Option[Int] = None, mapper: Option[Entity] => String): Unit = {
+  private def display2DGridAsAscii(g: Graph, gridProperties: GridProperties, title: String, z: Option[Int] = None, mapper: Option[Entity] => String): Unit = {
+    println(title)
     z.foreach(value => println(s"LAYER $value"))
     val builder = StringBuilder.newBuilder
     (1 to gridProperties.xCount).foreach(_ => builder.append("+---"))
@@ -195,10 +198,24 @@ object GraphLogic {
 
   def addPosition(p: Position, g: Graph): Graph = g += p
 
+  def allConnections(g: Graph): Set[EdgeLikeIn[g.NodeT]] = g.edges.map(_.edge).filter(_.label == Label.CONNECTION).toSet
+
+  def findConnections(p: Position, g: Graph): Set[EdgeLikeIn[g.NodeT]] =
+    g find p match {
+      case Some(n) => n.edges.map(_.edge).filter(_.label == Label.CONNECTION).toSet
+      case None => Set.empty
+    }
+
+  def findAttachments(p: Position, g: Graph): Set[EdgeLikeIn[g.NodeT]] =
+    g find p match {
+      case Some(n) => n.edges.map(_.edge).filter(_.label == Label.ATTACHMENT).toSet
+      case None => Set.empty
+    }
+
   def connect(p1: Position, p2: Position, g: Graph): Graph = {
-    (g find p1).foreach(n1 => {
+    g find p1 foreach { n1 =>
       (g find p2).foreach(n2 => g += (n1.value ~+ n2.value)(Label.CONNECTION))
-    })
+    }
     g
   }
 
@@ -224,20 +241,33 @@ object GraphLogic {
   }
 
   def moveEntity(e: Entity, p: Position, g: Graph): Graph = {
-    detach(e, p, g)
+    detach(e, g)
     e.shiftCluster(p).foreach(attach(e, _, g))
     g
   }
 
   def removeEntity(e: Entity, g: Graph): Graph = remove(e, g)
 
+  def allAttachments(g: Graph): Set[EdgeLikeIn[g.NodeT]] = g.edges.map(_.edge).filter(_.label == Label.ATTACHMENT).toSet
+
+  def findAttachments(e: Entity, g: Graph): Set[EdgeLikeIn[g.NodeT]] =
+    g find e match {
+      case Some(n) => n.edges.map(_.edge).filter(_.label == Label.ATTACHMENT).toSet
+      case None => Set.empty
+    }
+
   def attach(e: Entity, p: Position, g: Graph): Graph = {
     (g find p).foreach(n => g += (e ~+> n.value)(Label.ATTACHMENT))
     g
   }
 
+  def detach(e: Entity, g: Graph): Graph = {
+    findPositions(e, g).foreach(detach(e, _, g))
+    g
+  }
+
   def detach(e: Entity, p: Position, g: Graph): Graph = {
-    g find (e ~+> p) (Label.ATTACHMENT) foreach { edge => g -= edge }
+    (g find (e ~+> p)(Label.ATTACHMENT)).foreach(edge => g -= edge)
     g
   }
 

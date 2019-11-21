@@ -34,18 +34,20 @@ class GraphLogicTest extends FunSuite with BeforeAndAfter {
   val modelProperties = ModelProperties(ModelType.Graph, Some(graphProperties))
   val state: GraphModelState = GraphModelState(id, modelProperties)
 
+  val entity0 = Entity("agent::random", EntityOptions())
+
   def asciiMapper(entity: Option[Entity]): String = entity match {
     case Some(e) => e.kind match {
       case "agent::random" => "A"
       case "thing::tile" => "T"
       case _ => "?"
     }
-    case None => "X"
+    case None => " "
   }
 
   test("build position layer from grid properties") {
     val graph = GraphLogic.buildPositionLayer(gridProperties)
-    GraphLogic.displayGridAsAscii(graph, gridProperties, asciiMapper).unsafeRunSync()
+    GraphLogic.displayGridAsAscii(graph, gridProperties, "EMPTY GRID", asciiMapper).unsafeRunSync()
     assert(graph.nonEmpty)
     assert(graph.nodes.length == xCount * yCount)
     assert(graph.edges.length == (xCount - 1) * yCount + (yCount - 1) * xCount)
@@ -53,12 +55,34 @@ class GraphLogicTest extends FunSuite with BeforeAndAfter {
 
   test("add entity") {
     val graph = GraphLogic.buildPositionLayer(gridProperties)
-    val entity = Entity("agent::random", EntityOptions())
-    GraphLogic.addEntity(entity, Position(1, 1), graph)
-    GraphLogic.displayGridAsAscii(graph, gridProperties, asciiMapper).unsafeRunSync()
+    GraphLogic.addEntity(entity0, Position(1, 1), graph)
+    GraphLogic.displayGridAsAscii(graph, gridProperties, "ADD AGENT TO (1,1)", asciiMapper).unsafeRunSync()
     assert(graph.nonEmpty)
     assert(graph.nodes.length == 1 + xCount * yCount)
     assert(graph.edges.length == 1 + (xCount - 1) * yCount + (yCount - 1) * xCount)
+  }
+
+  test("move entity") {
+    val graph = GraphLogic.buildPositionLayer(gridProperties)
+    GraphLogic.addEntity(entity0, Position(1, 1), graph)
+    GraphLogic.moveEntity(entity0, Position(5, 5), graph)
+    GraphLogic.displayGridAsAscii(graph, gridProperties, "MOVE AGENT TO (5,5)", asciiMapper).unsafeRunSync()
+    assert(graph.nonEmpty)
+    assert(graph.nodes.length == 1 + xCount * yCount)
+    assert(graph.edges.length == 1 + (xCount - 1) * yCount + (yCount - 1) * xCount)
+  }
+
+  test("remove entity") {
+    val graph = GraphLogic.buildPositionLayer(gridProperties)
+    GraphLogic.addEntity(entity0, Position(1, 1), graph)
+    GraphLogic.displayGridAsAscii(graph, gridProperties, "ADD AGENT TO (1,1)", asciiMapper).unsafeRunSync()
+    assert(graph.nonEmpty)
+    assert(graph.nodes.length == 1 + xCount * yCount)
+    assert(graph.edges.length == 1 + (xCount - 1) * yCount + (yCount - 1) * xCount)
+    GraphLogic.removeEntity(entity0, graph)
+    GraphLogic.displayGridAsAscii(graph, gridProperties, "REMOVE AGENT", asciiMapper).unsafeRunSync()
+    assert(graph.nodes.length == xCount * yCount)
+    assert(graph.edges.length == (xCount - 1) * yCount + (yCount - 1) * xCount)
   }
 
 }
