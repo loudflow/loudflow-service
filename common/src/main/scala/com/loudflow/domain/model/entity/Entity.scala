@@ -16,6 +16,7 @@
 package com.loudflow.domain.model.entity
 
 import java.time.Instant
+import java.util.UUID
 
 import com.loudflow.domain.model.graph.GraphLogic.Node
 import com.loudflow.domain.model.{Direction, Position}
@@ -26,6 +27,7 @@ import play.api.libs.json._
 
 final case class Entity
 (
+  id: String,
   kind: String,
   position: Option[Position],
   options: EntityOptions,
@@ -45,6 +47,11 @@ final case class Entity
     case Some(cluster) => Entity.shiftCluster(position, cluster)
     case None => Array(position)
   }
+  override def hashCode: Int = id.##
+  override def equals(other: Any): Boolean = other match {
+    case that: Node => this.id == that.id
+    case _ => false
+  }
 }
 
 object Entity {
@@ -58,8 +65,8 @@ object Entity {
     properties.created should be > 0L
   }
 
-  def apply(kind: String, position: Position, options: EntityOptions): Entity = new Entity(kind, Some(position), options, Instant.now().toEpochMilli)
-  def apply(kind: String, options: EntityOptions): Entity = new Entity(kind, None, options, Instant.now().toEpochMilli)
+  def apply(kind: String, position: Position, options: EntityOptions): Entity = new Entity(UUID.randomUUID().toString, kind, Some(position), options, Instant.now().toEpochMilli)
+  def apply(kind: String, options: EntityOptions): Entity = new Entity(UUID.randomUUID().toString, kind, None, options, Instant.now().toEpochMilli)
 
   def generateCluster(properties: ClusterProperties, random: JavaRandom): Array[Position] =
     if (properties.autoGenerate) {
@@ -67,11 +74,11 @@ object Entity {
       val cluster = (1 to size).foldLeft(List(Position(0, 0)))((acc, _) => {
         val last = acc.head
         if (properties.is3D) {
-          shuffle(Direction.cardinal3D.map(direction => {
+          shuffle(Direction.cardinal3D.flatMap(direction => {
             Direction.stepInDirection(last, direction, properties.step)
           }).toSeq.diff(acc), random).head :: acc
         } else {
-          shuffle(Direction.cardinal.map(direction => {
+          shuffle(Direction.cardinal.flatMap(direction => {
             Direction.stepInDirection(last, direction, properties.step)
           }).toSeq.diff(acc), random).head :: acc
         }

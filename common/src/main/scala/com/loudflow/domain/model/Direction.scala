@@ -91,41 +91,44 @@ object Direction {
   val ordinal3D: Set[Direction] = Set(NorthEast, SouthEast, SouthWest, NorthWest, NorthEastAbove, SouthEastAbove, SouthWestAbove, NorthWestAbove, NorthEastBelow, SouthEastBelow, SouthWestBelow, NorthWestBelow)
   val compass3D: Set[Direction] = cardinal3D ++ ordinal3D
 
-  def stepInDirection(position: Position, direction: Direction, step: Double, xSpan: Option[Span[Double]] = None, ySpan: Option[Span[Double]] = None, zSpan: Option[Span[Double]] = None): Position = direction match {
-    case North => Position(position.x, forward(position.y, step, ySpan), position.z)
-    case NorthEast => Position(forward(position.x, step, xSpan), forward(position.y, step, ySpan), position.z)
-    case East => Position(forward(position.x, step, xSpan), position.y, position.z)
-    case SouthEast => Position(forward(position.x, step, xSpan), backward(position.y, step, ySpan), position.z)
-    case South => Position(position.x, backward(position.y, step, ySpan), position.z)
-    case SouthWest => Position(backward(position.x, step, xSpan), backward(position.y, step, ySpan), position.z)
-    case West => Position(backward(position.x, step, xSpan), position.y, position.z)
-    case NorthWest => Position(backward(position.x, step, xSpan), forward(position.y, step, ySpan), position.z)
-    case CenterAbove => Position(position.x, position.y, forward(position.z, step, zSpan))
-    case NorthAbove => Position(position.x, forward(position.y, step, ySpan), forward(position.z, step, zSpan))
-    case NorthEastAbove => Position(forward(position.x, step, xSpan), forward(position.y, step, ySpan), forward(position.z, step, zSpan))
-    case EastAbove => Position(forward(position.x, step, xSpan), position.y, forward(position.z, step, zSpan))
-    case SouthEastAbove => Position(forward(position.x, step, xSpan), backward(position.y, step, ySpan), forward(position.z, step, zSpan))
-    case SouthAbove => Position(position.x, backward(position.y, step, ySpan), forward(position.z, step, zSpan))
-    case SouthWestAbove => Position(backward(position.x, step, xSpan), backward(position.y, step, ySpan), forward(position.z, step, zSpan))
-    case WestAbove => Position(backward(position.x, step, xSpan), position.y, forward(position.z, step, zSpan))
-    case NorthWestAbove => Position(backward(position.x, step, xSpan), forward(position.y, step, ySpan), forward(position.z, step, zSpan))
-    case CenterBelow => Position(position.x, position.y, backward(position.z, step, zSpan))
-    case NorthBelow => Position(position.x, forward(position.y, step, ySpan), backward(position.z, step, zSpan))
-    case NorthEastBelow => Position(forward(position.x, step, xSpan), forward(position.y, step, ySpan), backward(position.z, step, zSpan))
-    case EastBelow => Position(forward(position.x, step, xSpan), position.y, backward(position.z, step, zSpan))
-    case SouthEastBelow => Position(forward(position.x, step, xSpan), backward(position.y, step, ySpan), backward(position.z, step, zSpan))
-    case SouthBelow => Position(position.x, backward(position.y, step, ySpan), backward(position.z, step, zSpan))
-    case SouthWestBelow => Position(backward(position.x, step, xSpan), backward(position.y, step, ySpan), backward(position.z, step, zSpan))
-    case WestBelow => Position(backward(position.x, step, xSpan), position.y, backward(position.z, step, zSpan))
-    case NorthWestBelow => Position(backward(position.x, step, xSpan), forward(position.y, step, ySpan), backward(position.z, step, zSpan))
+  def stepInDirection(position: Position, direction: Direction, step: Double, xSpan: Option[Span[Double]] = None, ySpan: Option[Span[Double]] = None, zSpan: Option[Span[Double]] = None): Option[Position] = direction match {
+    // 2D compass directions
+    case North => forward(position.y, step, ySpan).map(Position(position.x, _, position.z))
+    case NorthEast => forward(position.x, step, xSpan).flatMap(x => forward(position.y, step, ySpan).map(Position(x, _, position.z)))
+    case East => forward(position.x, step, xSpan).map(Position(_, position.y, position.z))
+    case SouthEast => forward(position.x, step, xSpan).flatMap(x => backward(position.y, step, ySpan).map(Position(x, _, position.z)))
+    case South => backward(position.y, step, ySpan).map(Position(position.x, _, position.z))
+    case SouthWest => backward(position.x, step, xSpan).flatMap(x => backward(position.y, step, ySpan).map(Position(x, _, position.z)))
+    case West => backward(position.x, step, xSpan).map(Position(_, position.y, position.z))
+    case NorthWest => backward(position.x, step, xSpan).flatMap(x => forward(position.y, step, ySpan).map(Position(x, _, position.z)))
+    // plus 3d compass directions above
+    case CenterAbove => forward(position.z, step, zSpan).map(Position(position.x, position.y, _))
+    case NorthAbove => forward(position.y, step, ySpan).flatMap(y => forward(position.z, step, zSpan).map(Position(position.x, y, _)))
+    case NorthEastAbove => forward(position.x, step, xSpan).flatMap(x => forward(position.y, step, ySpan).flatMap(y => forward(position.z, step, zSpan).map(Position(x, y, _))))
+    case EastAbove => forward(position.x, step, xSpan).flatMap(x => forward(position.z, step, zSpan).map(Position(x, position.y, _)))
+    case SouthEastAbove => forward(position.x, step, xSpan).flatMap(x => backward(position.y, step, ySpan).flatMap(y => forward(position.z, step, zSpan).map(Position(x, y, _))))
+    case SouthAbove => backward(position.y, step, ySpan).flatMap(y => forward(position.z, step, zSpan).map(Position(position.x, y, _)))
+    case SouthWestAbove => backward(position.x, step, xSpan).flatMap(x => backward(position.y, step, ySpan).flatMap(y => forward(position.z, step, zSpan).map(Position(x, y, _))))
+    case WestAbove => backward(position.x, step, xSpan).flatMap(x => forward(position.z, step, zSpan).map(Position(x, position.y, _)))
+    case NorthWestAbove => backward(position.x, step, xSpan).flatMap(x => forward(position.y, step, ySpan).flatMap(y => forward(position.z, step, zSpan).map(Position(x, y, _))))
+    // plus 3d compass directions below
+    case CenterBelow => backward(position.z, step, zSpan).map(Position(position.x, position.y, _))
+    case NorthBelow => forward(position.y, step, ySpan).flatMap(y => backward(position.z, step, zSpan).map(Position(position.x, y, _)))
+    case NorthEastBelow => forward(position.x, step, xSpan).flatMap(x => forward(position.y, step, ySpan).flatMap(y => backward(position.z, step, zSpan).map(Position(x, y, _))))
+    case EastBelow => forward(position.x, step, xSpan).flatMap(x => backward(position.z, step, zSpan).map(Position(x, position.y, _)))
+    case SouthEastBelow => forward(position.x, step, xSpan).flatMap(x => backward(position.y, step, ySpan).flatMap(y => backward(position.z, step, zSpan).map(Position(x, y, _))))
+    case SouthBelow => backward(position.y, step, ySpan).flatMap(y => backward(position.z, step, zSpan).map(Position(position.x, y, _)))
+    case SouthWestBelow => backward(position.x, step, xSpan).flatMap(x => backward(position.y, step, ySpan).flatMap(y => backward(position.z, step, zSpan).map(Position(x, y, _))))
+    case WestBelow => backward(position.x, step, xSpan).flatMap(x => backward(position.z, step, zSpan).map(Position(x, position.y, _)))
+    case NorthWestBelow => backward(position.x, step, xSpan).flatMap(x => forward(position.y, step, ySpan).flatMap(y => backward(position.z, step, zSpan).map(Position(x, y, _))))
   }
-  def forward(value: Double, step: Double, bounds: Option[Span[Double]]): Double = bounds match {
-    case Some(span) => Math.min(value + step, span.max)
-    case None => value + step
+  def forward(value: Double, step: Double, bounds: Option[Span[Double]]): Option[Double] = bounds match {
+    case Some(span) => if (value + step > span.max) None else Some(value + step)
+    case None => Some(value + step)
   }
-  def backward(value: Double, step: Double, bounds: Option[Span[Double]]): Double = bounds match {
-    case Some(span) => Math.max(value - step, span.min)
-    case None => value - step
+  def backward(value: Double, step: Double, bounds: Option[Span[Double]]): Option[Double] = bounds match {
+    case Some(span) => if (value - step < span.min) None else Some(value - step)
+    case None => Some(value - step)
   }
 
   final case object North extends Direction {

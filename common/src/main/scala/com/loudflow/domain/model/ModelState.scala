@@ -15,7 +15,6 @@
 ************************************************************************ */
 package com.loudflow.domain.model
 
-import cats.effect.IO
 import com.loudflow.domain.model.entity.{Entity, EntityOptions, EntityProperties}
 import com.loudflow.domain.model.graph.GraphModelState
 import com.loudflow.util.JavaRandom

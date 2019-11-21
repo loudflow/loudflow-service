@@ -12,6 +12,7 @@ val accord = "com.wix" %% "accord-core" % "0.7.3"
 val scalaGraph = "org.scala-graph" %% "graph-core" % "1.13.0"
 val scalaGraphJson = "org.scala-graph" %% "graph-json" % "1.12.1"
 val scalaTest = "org.scalatest" %% "scalatest" % "3.0.4" % Test
+val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 
 lazy val `loudflow` = (project in file("."))
   .aggregate(`common`, `agent-api`, `agent-impl`, `model-api`, `model-impl`, `simulation-api`, `simulation-impl`)
@@ -26,7 +27,8 @@ lazy val `common` = (project in file("common"))
       accord,
       cats,
       catsEffect,
-      scalaTest
+      scalaTest,
+      logback
     )
   )
 
@@ -34,7 +36,8 @@ lazy val `agent-api` = (project in file("agent-api"))
   .settings(
     libraryDependencies ++= Seq(
       lagomScaladslApi,
-      accord
+      accord,
+      logback
     )
   )
   .dependsOn(`common`)
@@ -48,7 +51,8 @@ lazy val `agent-impl` = (project in file("agent-impl"))
       lagomScaladslTestKit,
       macwire,
       cats,
-      scalaTest
+      scalaTest,
+      logback
     )
   )
   .settings(lagomForkedTestSettings)
@@ -58,7 +62,8 @@ lazy val `model-api` = (project in file("model-api"))
   .settings(
     libraryDependencies ++= Seq(
       lagomScaladslApi,
-      accord
+      accord,
+      logback
     )
   )
   .dependsOn(`common`)
@@ -72,7 +77,8 @@ lazy val `model-impl` = (project in file("model-impl"))
       lagomScaladslTestKit,
       macwire,
       cats,
-      scalaTest
+      scalaTest,
+      logback
     )
   )
   .settings(lagomForkedTestSettings)
@@ -82,7 +88,8 @@ lazy val `simulation-api` = (project in file("simulation-api"))
   .settings(
     libraryDependencies ++= Seq(
       lagomScaladslApi,
-      accord
+      accord,
+      logback
     )
   )
   .dependsOn(`common`)
@@ -96,7 +103,8 @@ lazy val `simulation-impl` = (project in file("simulation-impl"))
       lagomScaladslTestKit,
       macwire,
       cats,
-      scalaTest
+      scalaTest,
+      logback
     )
   )
   .settings(lagomForkedTestSettings)

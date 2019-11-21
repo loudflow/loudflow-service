@@ -19,7 +19,7 @@ import play.api.libs.json._
 import com.loudflow.domain.model.graph.GraphLogic.Node
 import com.loudflow.util.Span
 
-final case class Position(x: Double, y: Double, z: Double = 0.0, index: Int = 0) extends Node {
+final case class Position(x: Double, y: Double, z: Double = 0.0) extends Node {
   val margin = 0.001
   def distanceFrom(position: Position): Double = Math.sqrt(squareDiff(this.x, position.x) + squareDiff(this.y, position.y) + squareDiff(this.z, position.z))
   def shift(position: Position): Position = Position(diff(position.x, this.x), diff(position.y, this.y), diff(position.z, this.z))
@@ -27,6 +27,12 @@ final case class Position(x: Double, y: Double, z: Double = 0.0, index: Int = 0)
   private def diff(value1: Double, value2: Double): Double = value2 - value1
   private def squareDiff(value1: Double, value2: Double): Double = diff(value1, value2) * diff(value1, value2)
   private def isWithinMargin(value: Double): Boolean = value >= -margin && value <= margin
+  val id: String = x.toString.toLowerCase + "::" + y.toString.toLowerCase + "::" + z.toString.toLowerCase
+  override def hashCode: Int = id.##
+  override def equals(other: Any): Boolean = other match {
+    case that: Node => this.id == that.id
+    case _ => false
+  }
 }
 object Position {
   implicit val format: Format[Position] = Json.format

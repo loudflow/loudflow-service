@@ -15,20 +15,27 @@
 ************************************************************************ */
 package com.loudflow.domain.model.graph
 
-import java.util.UUID
 import scalax.collection.edge.Implicits._
-import scalax.collection.GraphPredef.EdgeLikeIn
+import scalax.collection.GraphPredef._
 import scalax.collection.mutable.{Graph => ScalaGraph}
 import cats.effect.IO
-
 import com.loudflow.domain.model._
 import com.loudflow.domain.model.entity.Entity
+import com.loudflow.util.Span
+import org.slf4j.{Logger, LoggerFactory}
+// import scalax.collection.edge.{LBase, LDiEdge, LUnDiEdge}
 
 object GraphLogic {
+
+  private final val log: Logger = LoggerFactory.getLogger("GraphLogic")
 
   /* ************************************************************************
      DEFINITIONS
   ************************************************************************ */
+
+  // implicit val lEdgeFactory: LBase.type = scalax.collection.edge.LBase
+  // implicit val lDiEdgeFactory: LDiEdge.type = scalax.collection.edge.LDiEdge
+  // implicit val lUnDiEdgeFactory: LUnDiEdge.type = scalax.collection.edge.LUnDiEdge
 
   type Graph = ScalaGraph[Node, EdgeLikeIn]
 
@@ -40,16 +47,11 @@ object GraphLogic {
   }
 
   trait Node {
-    val id: String = UUID.randomUUID().toString
-    override def hashCode: Int = id.##
-    override def equals(other: Any): Boolean = other match {
-      case that: Node => this.id == that.id
-      case _ => false
-    }
+    def id: String
   }
 
   /* ************************************************************************
-     PRIVATE METHODS: GRAPH
+     GRAPH
   ************************************************************************ */
 
   def recoverGraph(entities: Set[Entity], positions: Set[Position], attachments: Set[(String, String)], connections: Set[(String, String)]): Graph = {
@@ -60,52 +62,67 @@ object GraphLogic {
   def buildPositionLayer(positions: Set[Position], connections: Set[(String, String)]): Graph = {
     val g = emptyGraph
     positions.foreach(addPosition(_, g))
-    val nodes = allPositions(g)
     connections.foreach(connection => {
-      val node1 = nodes.find(_.id == connection._1)
-      val node2 = nodes.find(_.id == connection._2)
-      if (node1.isDefined && node2.isDefined) connect(node1.get, node2.get, g)
+      positions.find(_.id == connection._1).foreach(p => {
+        positions.find(_.id == connection._2).foreach(connect(p, _, g))
+      })
     })
     g
   }
 
-  def buildPositionLayer(properties: GridProperties): Graph = {
+  def buildPositionLayer(gridProperties: GridProperties): Graph = {
     val g = emptyGraph
-    if (properties.zCount > 0) {
-      val positions = for {
-        x <- 1 to properties.xCount
-        y <- 1 to properties.yCount
-        z <- 1 to properties.zCount
-      } yield Position(x, y, z)
-      positions.foreach(addPosition(_, g))
-      positions.foreach(position => {
-        if (properties.cardinalOnly)
-          Direction.cardinal3D.foreach(direction => connect(position, Direction.stepInDirection(position, direction, 1.0), g))
-        else
-          Direction.compass3D.foreach(direction => connect(position, Direction.stepInDirection(position, direction, 1.0), g))
-      })
-    }
-    else {
-      val positions = for {
-        x <- 1 to properties.xCount
-        y <- 1 to properties.yCount
-      } yield Position(x, y)
-      positions.foreach(addPosition(_, g))
-      positions.foreach(position => {
-        if (properties.cardinalOnly) {
-          Direction.cardinal.foreach(direction => {
-            connect(position, Direction.stepInDirection(position, direction, 1.0), g)
+    val xSpan = Span(1, gridProperties.xCount.toDouble)
+    val ySpan = Span(1, gridProperties.yCount.toDouble)
+    if (gridProperties.zCount > 0) build3DPositionLayer(gridProperties, xSpan, ySpan, g)
+    else build2DPositionLayer(gridProperties, xSpan, ySpan, g)
+  }
+
+  private def build2DPositionLayer(gridProperties: GridProperties, xSpan: Span[Double], ySpan: Span[Double], g: Graph): Graph = {
+    val positions = for {
+      x <- 1 to gridProperties.xCount
+      y <- 1 to gridProperties.yCount
+    } yield Position(x, y)
+    positions.foreach(addPosition(_, g))
+    positions.foreach(p1 => {
+      if (gridProperties.cardinalOnly) {
+        Direction.cardinal.foreach(direction => {
+          Direction.stepInDirection(p1, direction, 1, Some(xSpan), Some(ySpan)).foreach(p2 => {
+            positions.find(p => p.x == p2.x && p.y == p2.y).foreach(connect(p1, _, g))
           })
-        } else
-          Direction.compass.foreach(direction => connect(position, Direction.stepInDirection(position, direction, 1.0), g))
-      })
-      println(g.nodes.length)
-      println(g.edges.length)
-      println(g.nodes.filter(n => n.value.asInstanceOf[Position] == positions.head).toSeq.length)
-      println(g.order)
-      println(g.graphSize)
-      println(g.size)
-    }
+        })
+      } else
+        Direction.compass.foreach(direction => {
+          Direction.stepInDirection(p1, direction, 1, Some(xSpan), Some(ySpan)).foreach(p2 => {
+            positions.find(p => p.x == p2.x && p.y == p2.y).foreach(connect(p1, _, g))
+          })
+        })
+    })
+    g
+  }
+
+  private def build3DPositionLayer(gridProperties: GridProperties, xSpan: Span[Double], ySpan: Span[Double], g: Graph): Graph = {
+    val zSpan = Span(1, gridProperties.zCount.toDouble)
+    val positions = for {
+      x <- 1 to gridProperties.xCount
+      y <- 1 to gridProperties.yCount
+      z <- 1 to gridProperties.zCount
+    } yield Position(x, y, z)
+    positions.foreach(addPosition(_, g))
+    positions.foreach(p => {
+      if (gridProperties.cardinalOnly)
+        Direction.cardinal3D.foreach(direction => {
+          Direction.stepInDirection(p, direction, 1, Some(xSpan), Some(ySpan), Some(zSpan)).foreach(p2 => {
+            positions.find(p => p.x == p2.x && p.y == p2.y && p.z == p2.z).foreach(connect(p, _, g))
+          })
+        })
+      else
+        Direction.compass3D.foreach(direction => {
+          Direction.stepInDirection(p, direction, 1, Some(xSpan), Some(ySpan), Some(zSpan)).foreach(p2 => {
+            positions.find(p => p.x == p2.x && p.y == p2.y && p.z == p2.z).foreach(connect(p, _, g))
+          })
+        })
+    })
     g
   }
 
@@ -120,47 +137,47 @@ object GraphLogic {
     g
   }
 
-  def displayGridAsAscii(g: Graph, gridProperties: GridProperties, mapper: Option[Entity] => String): IO[Unit] =
+  def displayGridAsAscii(g: Graph, gridProperties: GridProperties, mapper: Option[Entity] => String): IO[Unit] = IO {
     if (gridProperties.zCount > 0) {
-      IO {
-        for {
-          z <- 1 to gridProperties.zCount
-        } yield {
-          println(s"LAYER $z")
-          for {
-            y <- 1 to gridProperties.yCount
-            x <- 1 to gridProperties.xCount
-          } yield {
-            println(mapper(findEntities(Position(x, y, z), g).headOption) mkString " ")
-          }
-        }
-      }
+      for {
+        z <- 1 to gridProperties.zCount
+      } yield display2DGridAsAscii(g, gridProperties, Some(z), mapper)
     }
-    else {
-      IO {
-        val builder = StringBuilder.newBuilder
-        builder.append("   ")
-        (1 to gridProperties.xCount).foreach(col => builder.append("  " + col + " "))
-        println(builder)
-        builder.clear()
-        (1 to gridProperties.xCount).foreach(_ => builder.append("+---"))
-        val rowSeparator = "   " + builder.toString() + "+"
-        for {
-          y <- 1 to gridProperties.yCount
-        } yield {
-          println(rowSeparator)
-          builder.clear()
-          if (y < 10) builder.append(y + "  |") else builder.append(y + " |")
-          for {
-            x <- 1 to gridProperties.xCount
-          } yield {
-            builder.append(" " + mapper(findEntities(Position(x, y), g).headOption) + " |")
-          }
-          println(builder)
+    else display2DGridAsAscii(g, gridProperties, None, mapper)
+  }
+
+  private def display2DGridAsAscii(g: Graph, gridProperties: GridProperties, z: Option[Int] = None, mapper: Option[Entity] => String): Unit = {
+    z.foreach(value => println(s"LAYER $value"))
+    val builder = StringBuilder.newBuilder
+    (1 to gridProperties.xCount).foreach(_ => builder.append("+---"))
+    val rowSeparator = "   " + builder.toString() + "+"
+    builder.clear()
+    builder.append("   ")
+    (1 to gridProperties.xCount).foreach(col => builder.append("  " + col + " "))
+    val colLabels = builder.toString()
+    println(colLabels)
+    for {
+      y <- 1 to gridProperties.yCount
+    } yield {
+      println(rowSeparator)
+      builder.clear()
+      val row = gridProperties.yCount - y + 1
+      if (row < 10) builder.append(row + "  |") else builder.append(row + " |")
+      for {
+        col <- 1 to gridProperties.xCount
+      } yield {
+        val position = z match {
+          case Some(value) => Position(col, row, value)
+          case None => Position(col, row)
         }
-        println(rowSeparator)
+        builder.append(" " + mapper(findEntities(position, g).headOption) + " |")
       }
+      builder.append(" " + row)
+      println(builder)
     }
+    println(rowSeparator)
+    println(colLabels)
+  }
 
   /* ************************************************************************
      POSITION
@@ -174,13 +191,16 @@ object GraphLogic {
       case None => Set.empty[Position]
     }
 
-  def filterPositions(nodes: Set[Node]): Set[Position] = nodes.collect { case value: Position => value }
-
-  def filterEntities(nodes: Set[Node]): Set[Entity] = nodes.collect { case value: Entity => value }
+  private def filterPositions(nodes: Set[Node]): Set[Position] = nodes.collect { case value: Position => value }
 
   def addPosition(p: Position, g: Graph): Graph = g += p
 
-  def connect(p1: Position, p2: Position, g: Graph): Graph = g += (p1~+p2)(Label.CONNECTION)
+  def connect(p1: Position, p2: Position, g: Graph): Graph = {
+    (g find p1).foreach(n1 => {
+      (g find p2).foreach(n2 => g += (n1.value ~+ n2.value)(Label.CONNECTION))
+    })
+    g
+  }
 
   /* ************************************************************************
      ENTITY
@@ -196,6 +216,8 @@ object GraphLogic {
 
   def findEntities(kind: String, g: Graph): Set[Entity] = allEntities(g).filter(_.kind == kind)
 
+  private def filterEntities(nodes: Set[Node]): Set[Entity] = nodes.collect { case value: Entity => value }
+
   def addEntity(e: Entity, p: Position, g: Graph): Graph = {
     g += e
     attach(e, p, g)
@@ -209,7 +231,10 @@ object GraphLogic {
 
   def removeEntity(e: Entity, g: Graph): Graph = remove(e, g)
 
-  def attach(e: Entity, p: Position, g: Graph): Graph = g += (e ~+> p) (Label.ATTACHMENT)
+  def attach(e: Entity, p: Position, g: Graph): Graph = {
+    (g find p).foreach(n => g += (e ~+> n.value)(Label.ATTACHMENT))
+    g
+  }
 
   def detach(e: Entity, p: Position, g: Graph): Graph = {
     g find (e ~+> p) (Label.ATTACHMENT) foreach { edge => g -= edge }

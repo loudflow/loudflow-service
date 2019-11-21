@@ -17,7 +17,7 @@ package com.loudflow.domain.model
 
 import java.util.UUID
 
-import com.loudflow.domain.model.entity.Entity
+import com.loudflow.domain.model.entity.{Entity, EntityOptions}
 import com.loudflow.domain.model.graph.{GraphLogic, GraphModelState}
 import org.scalatest.{BeforeAndAfter, FunSuite}
 import org.slf4j.{Logger, LoggerFactory}
@@ -27,7 +27,9 @@ class GraphLogicTest extends FunSuite with BeforeAndAfter {
   private final val log: Logger = LoggerFactory.getLogger(classOf[GraphLogicTest])
 
   val id: String = UUID.randomUUID().toString
-  val gridProperties = GridProperties(10, 10)
+  val xCount = 10
+  val yCount = 10
+  val gridProperties = GridProperties(xCount, yCount)
   val graphProperties = GraphProperties(Some(gridProperties))
   val modelProperties = ModelProperties(ModelType.Graph, Some(graphProperties))
   val state: GraphModelState = GraphModelState(id, modelProperties)
@@ -45,6 +47,18 @@ class GraphLogicTest extends FunSuite with BeforeAndAfter {
     val graph = GraphLogic.buildPositionLayer(gridProperties)
     GraphLogic.displayGridAsAscii(graph, gridProperties, asciiMapper).unsafeRunSync()
     assert(graph.nonEmpty)
-    assert(graph.nodes.length == 100)
+    assert(graph.nodes.length == xCount * yCount)
+    assert(graph.edges.length == (xCount - 1) * yCount + (yCount - 1) * xCount)
   }
+
+  test("add entity") {
+    val graph = GraphLogic.buildPositionLayer(gridProperties)
+    val entity = Entity("agent::random", EntityOptions())
+    GraphLogic.addEntity(entity, Position(1, 1), graph)
+    GraphLogic.displayGridAsAscii(graph, gridProperties, asciiMapper).unsafeRunSync()
+    assert(graph.nonEmpty)
+    assert(graph.nodes.length == 1 + xCount * yCount)
+    assert(graph.edges.length == 1 + (xCount - 1) * yCount + (yCount - 1) * xCount)
+  }
+
 }
