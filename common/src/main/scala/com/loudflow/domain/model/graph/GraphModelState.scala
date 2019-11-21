@@ -24,15 +24,17 @@ import org.slf4j.{Logger, LoggerFactory}
 
 final case class GraphModelState(id: String, properties: ModelProperties, seed: Long, graph: Graph = emptyGraph) extends ModelState {
   val demuxer = "graph"
-  def entities: Set[Entity] = graph.nodes.map(_.value).collect{case value: Entity => value}.toSet
-  def positions: Set[Position] = graph.nodes.map(_.value).collect{case value: Position => value}.toSet
-  def attachments: Set[(String, String)] =
-    graph.edges.map(_.edge).filter(_.label == Label.ATTACHMENT).map(edge => (edge.head.value.id, edge.last.value.id)).toSet
-  def connections: Set[(String, String)] =
-    graph.edges.map(_.edge).filter(_.label == Label.CONNECTION).map(edge => (edge.head.value.id, edge.last.value.id)).toSet
+  def entities: Set[Entity] = GraphHelper.allEntities(graph)
+  def positions: Set[Position] = GraphHelper.allPositions(graph)
+  def attachments: Set[(String, String)] = GraphHelper.allAttachments(graph).map(edge => (edge.head.value.id, edge.last.value.id))
+  def connections: Set[(String, String)] = GraphHelper.allConnections(graph).map(edge => (edge.head.value.id, edge.last.value.id))
   def isEmpty: Boolean = graph.nodes.isEmpty
   def graphProperties: GraphProperties = properties.graph.get
   def gridProperties: Option[GridProperties] = properties.graph.flatMap(_.grid)
+  def getPosition(id: String): Option[Position] = positions.find(_.id == id)
+  def entityPositions(id: String): Set[Position] = attachments.filter(_._1 == id).flatMap(value => getPosition(value._2))
+  def entitiesAtPosition(id: String): Set[Entity] = attachments.filter(_._2 == id).flatMap(value => getEntity(value._1))
+  def connectionsToPosition(id: String): Set[Position] = attachments.filter(_._1 == id).flatMap(value => getPosition(value._2))
 }
 
 object GraphModelState {
@@ -182,7 +184,7 @@ object GraphModelState {
       GraphHelper.findPositions(e, state.graph).forall(bodyPoint => {
         state.entityProperties(e.kind) match {
           case Some(entityProperties) => entityProperties.motion.distance >= point.distanceFrom(bodyPoint)
-          case None => false
+          case None => true
         }
       })
     })
@@ -246,26 +248,32 @@ object GraphModelState {
     }
   }
 
-  private def add(e: Entity, p: Position, state: GraphModelState): GraphModelState =
+  private def add(e: Entity, p: Position, state: GraphModelState): GraphModelState = {
+    log.trace(s"ENTER add(${e.toString}, ${p.toString}, [state])")
     if (isGrowthAllowed(e, state) && isAddable(e, p, state)) {
       val modifiedGraph = GraphHelper.addEntity(e, p, state.graph)
       state.copy(graph = modifiedGraph)
     } else state
+  }
 
-  private def move(e: Entity, state: GraphModelState): GraphModelState =
+  private def move(e: Entity, state: GraphModelState): GraphModelState = {
+    log.trace(s"ENTER move(${e.toString}, [state])")
     randomMovablePosition(e, state) match {
       case Some(p) =>
         val modifiedGraph = GraphHelper.moveEntity(e, p, state.graph)
         state.copy(graph = modifiedGraph)
       case None => state
     }
+  }
 
-  private def move(e: Entity, p: Position, state: GraphModelState): GraphModelState =
+  private def move(e: Entity, p: Position, state: GraphModelState): GraphModelState = {
+    log.trace(s"ENTER move(${e.toString}, ${p.toString}, [state])")
     if (isMotionAllowed(e, p, state) && isMovable(e, p, state)) {
       val modifiedGraph = GraphHelper.moveEntity(e, p, state.graph)
       state.copy(graph = modifiedGraph)
     }
     else state
+  }
 
   private def remove(e: Entity, state: GraphModelState): GraphModelState =
     if (isGrowthAllowed(e, state)) {

@@ -52,13 +52,45 @@ class GraphModelStateTest extends FunSuite with BeforeAndAfter {
     assert(state.graph.edges.length == (xCount - 1) * yCount + (yCount - 1) * xCount)
   }
 
-  test("addcreate") {
+  test("add") {
     val state = GraphModelState.create(id, modelProperties)
-    GraphModelState.add("agent::random", None, None, state)
-    GraphHelper.displayGridAsAscii(state.graph, gridProperties, "STATE WITH ONE RANDOMLY-PLACED AGENT", asciiMapper).unsafeRunSync()
-    assert(state.graph.nonEmpty)
-    assert(state.graph.nodes.length == 1 + xCount * yCount)
-    assert(state.graph.edges.length == 1 + (xCount - 1) * yCount + (yCount - 1) * xCount)
+    val newState = GraphModelState.add("agent::random", None, None, state)
+    GraphHelper.displayGridAsAscii(newState.graph, gridProperties, "STATE WITH ONE RANDOMLY-PLACED AGENT", asciiMapper).unsafeRunSync()
+    assert(newState.graph.nonEmpty)
+    assert(newState.graph.nodes.length == 1 + xCount * yCount)
+    assert(newState.graph.edges.length == 1 + (xCount - 1) * yCount + (yCount - 1) * xCount)
+  }
+
+  test("move") {
+    val state = GraphModelState.create(id, modelProperties)
+    val newState = GraphModelState.add("agent::random", None, Some(Position(5,5)), state)
+    val entity = newState.entities.head
+    GraphHelper.displayGridAsAscii(newState.graph, gridProperties, "STATE WITH ONE AGENT PLACED AT (5,5)", asciiMapper).unsafeRunSync()
+    assert(newState.entityPositions(entity.id).head.id == Position(5, 5).id)
+    val newerState = GraphModelState.move(entity.id, Some(Position(6,6)), state)
+    GraphHelper.displayGridAsAscii(newerState.graph, gridProperties, "STATE WITH AGENT MOVED TO (6,6)", asciiMapper).unsafeRunSync()
+    assert(newerState.entityPositions(entity.id).head.id == Position(6, 6).id)
+  }
+
+  test("remove") {
+    val state = GraphModelState.create(id, modelProperties)
+    val newState = GraphModelState.add("agent::random", None, Some(Position(5,5)), state)
+    val entity = newState.entities.head
+    assert(newState.entityPositions(entity.id).head.id == Position(5, 5).id)
+    val newerState = GraphModelState.remove(entity.id, newState)
+    assert(newerState.entities.isEmpty)
+  }
+
+  test("destroy") {
+    val state = GraphModelState.create(id, modelProperties)
+    GraphModelState.add("agent::random", None, Some(Position(5,5)), state)
+    val entity = state.entities.head
+    assert(state.entityPositions(entity.id).head.id == Position(5, 5).id)
+    val newState = GraphModelState.destroy(state)
+    assert(newState.entities.isEmpty)
+    assert(newState.positions.isEmpty)
+    assert(newState.attachments.isEmpty)
+    assert(newState.connections.isEmpty)
   }
 
 }
