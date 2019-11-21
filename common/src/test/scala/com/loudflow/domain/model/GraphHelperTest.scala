@@ -18,21 +18,18 @@ package com.loudflow.domain.model
 import java.util.UUID
 
 import com.loudflow.domain.model.entity.{Entity, EntityOptions}
-import com.loudflow.domain.model.graph.{GraphLogic, GraphModelState}
+import com.loudflow.domain.model.graph.GraphHelper
 import org.scalatest.{BeforeAndAfter, FunSuite}
 import org.slf4j.{Logger, LoggerFactory}
 
-class GraphLogicTest extends FunSuite with BeforeAndAfter {
+class GraphHelperTest extends FunSuite with BeforeAndAfter {
 
-  private final val log: Logger = LoggerFactory.getLogger(classOf[GraphLogicTest])
+  private final val log: Logger = LoggerFactory.getLogger(classOf[GraphHelperTest])
 
   val id: String = UUID.randomUUID().toString
   val xCount = 10
   val yCount = 10
   val gridProperties = GridProperties(xCount, yCount)
-  val graphProperties = GraphProperties(Some(gridProperties))
-  val modelProperties = ModelProperties(ModelType.Graph, Some(graphProperties))
-  val state: GraphModelState = GraphModelState(id, modelProperties)
 
   val entity0 = Entity("agent::random", EntityOptions())
 
@@ -46,41 +43,41 @@ class GraphLogicTest extends FunSuite with BeforeAndAfter {
   }
 
   test("build position layer from grid properties") {
-    val graph = GraphLogic.buildPositionLayer(gridProperties)
-    GraphLogic.displayGridAsAscii(graph, gridProperties, "EMPTY GRID", asciiMapper).unsafeRunSync()
+    val graph = GraphHelper.buildPositionLayer(gridProperties)
+    GraphHelper.displayGridAsAscii(graph, gridProperties, "EMPTY GRID", asciiMapper).unsafeRunSync()
     assert(graph.nonEmpty)
     assert(graph.nodes.length == xCount * yCount)
     assert(graph.edges.length == (xCount - 1) * yCount + (yCount - 1) * xCount)
   }
 
   test("add entity") {
-    val graph = GraphLogic.buildPositionLayer(gridProperties)
-    GraphLogic.addEntity(entity0, Position(1, 1), graph)
-    GraphLogic.displayGridAsAscii(graph, gridProperties, "ADD AGENT TO (1,1)", asciiMapper).unsafeRunSync()
+    val graph = GraphHelper.buildPositionLayer(gridProperties)
+    GraphHelper.addEntity(entity0, Position(1, 1), graph)
+    GraphHelper.displayGridAsAscii(graph, gridProperties, "ADD AGENT TO (1,1)", asciiMapper).unsafeRunSync()
     assert(graph.nonEmpty)
     assert(graph.nodes.length == 1 + xCount * yCount)
     assert(graph.edges.length == 1 + (xCount - 1) * yCount + (yCount - 1) * xCount)
   }
 
   test("move entity") {
-    val graph = GraphLogic.buildPositionLayer(gridProperties)
-    GraphLogic.addEntity(entity0, Position(1, 1), graph)
-    GraphLogic.moveEntity(entity0, Position(5, 5), graph)
-    GraphLogic.displayGridAsAscii(graph, gridProperties, "MOVE AGENT TO (5,5)", asciiMapper).unsafeRunSync()
+    val graph = GraphHelper.buildPositionLayer(gridProperties)
+    GraphHelper.addEntity(entity0, Position(1, 1), graph)
+    GraphHelper.moveEntity(entity0, Position(5, 5), graph)
+    GraphHelper.displayGridAsAscii(graph, gridProperties, "MOVE AGENT TO (5,5)", asciiMapper).unsafeRunSync()
     assert(graph.nonEmpty)
     assert(graph.nodes.length == 1 + xCount * yCount)
     assert(graph.edges.length == 1 + (xCount - 1) * yCount + (yCount - 1) * xCount)
   }
 
   test("remove entity") {
-    val graph = GraphLogic.buildPositionLayer(gridProperties)
-    GraphLogic.addEntity(entity0, Position(1, 1), graph)
-    GraphLogic.displayGridAsAscii(graph, gridProperties, "ADD AGENT TO (1,1)", asciiMapper).unsafeRunSync()
+    val graph = GraphHelper.buildPositionLayer(gridProperties)
+    GraphHelper.addEntity(entity0, Position(1, 1), graph)
+    GraphHelper.displayGridAsAscii(graph, gridProperties, "ADD AGENT TO (1,1)", asciiMapper).unsafeRunSync()
     assert(graph.nonEmpty)
     assert(graph.nodes.length == 1 + xCount * yCount)
     assert(graph.edges.length == 1 + (xCount - 1) * yCount + (yCount - 1) * xCount)
-    GraphLogic.removeEntity(entity0, graph)
-    GraphLogic.displayGridAsAscii(graph, gridProperties, "REMOVE AGENT", asciiMapper).unsafeRunSync()
+    GraphHelper.removeEntity(entity0, graph)
+    GraphHelper.displayGridAsAscii(graph, gridProperties, "REMOVE AGENT", asciiMapper).unsafeRunSync()
     assert(graph.nodes.length == xCount * yCount)
     assert(graph.edges.length == (xCount - 1) * yCount + (yCount - 1) * xCount)
   }

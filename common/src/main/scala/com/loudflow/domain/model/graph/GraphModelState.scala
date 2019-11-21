@@ -16,11 +16,11 @@
 package com.loudflow.domain.model.graph
 
 import play.api.libs.json._
-
 import com.loudflow.domain.model._
 import com.loudflow.domain.model.entity._
-import com.loudflow.domain.model.graph.GraphLogic._
+import com.loudflow.domain.model.graph.GraphHelper._
 import com.loudflow.util.shuffle
+import org.slf4j.{Logger, LoggerFactory}
 
 final case class GraphModelState(id: String, properties: ModelProperties, seed: Long, graph: Graph = emptyGraph) extends ModelState {
   val demuxer = "graph"
@@ -36,6 +36,8 @@ final case class GraphModelState(id: String, properties: ModelProperties, seed: 
 }
 
 object GraphModelState {
+
+  private final val log: Logger = LoggerFactory.getLogger("GraphModelState")
 
   implicit val reads: Reads[GraphModelState] = (json: JsValue) => {
     val id = (json \ "id").as[String]
@@ -115,19 +117,34 @@ object GraphModelState {
      PRIVATE METHODS: VALIDATION
   ************************************************************************ */
 
-  private def isAddable(e: Entity, p: Position, state: GraphModelState): Boolean = isInteractionAllowed(e, p, allowMove = false, state) && isProximityAllowed(e, p, state)
+  private def isAddable(e: Entity, p: Position, state: GraphModelState): Boolean = {
+    log.trace(s"ENTER isAddable(${e.toString}, ${p.toString}, [state])")
+    val result = isInteractionAllowed(e, p, allowMove = false, state) && isProximityAllowed(e, p, state)
+    log.trace(s"EXIT  isAddable(${e.toString}, ${p.toString}, [state]) => $result")
+    result
+  }
 
-  private def isMovable(e: Entity, p: Position, state: GraphModelState): Boolean = isInteractionAllowed(e, p, allowMove = true, state) && isProximityAllowed(e, p, state)
+  private def isMovable(e: Entity, p: Position, state: GraphModelState): Boolean = {
+    log.trace(s"ENTER isMovable(${e.toString}, ${p.toString}, [state])")
+    val result = isInteractionAllowed(e, p, allowMove = true, state) && isProximityAllowed(e, p, state)
+    log.trace(s"EXIT  isMovable(${e.toString}, ${p.toString}, [state]) => $result")
+    result
+  }
 
-  private def isGrowthAllowed(e: Entity, state: GraphModelState): Boolean =
-    state.entityProperties(e.kind) match {
-      case Some(entityProperties) => entityProperties.population.range.contains(GraphLogic.findEntities(e.kind, state.graph).size)
-      case None => false
+  private def isGrowthAllowed(e: Entity, state: GraphModelState): Boolean = {
+    log.trace(s"ENTER isGrowthAllowed(${e.toString}, [state])")
+    val result = state.entityProperties(e.kind) match {
+      case Some(entityProperties) => entityProperties.population.range.contains(GraphHelper.findEntities(e.kind, state.graph).size)
+      case None => true
     }
+    log.trace(s"ENTER isGrowthAllowed(${e.toString}, [state]) => $result")
+    result
+  }
 
   private def isInteractionAllowed(e: Entity, p: Position, allowMove: Boolean, state: GraphModelState): Boolean = {
-    e.shiftCluster(p).forall(point => {
-      GraphLogic.findEntities(point, state.graph).forall(target => {
+    log.trace(s"ENTER isInteractionAllowed(${e.toString}, ${p.toString}, $allowMove, [state])")
+    val result = e.shiftCluster(p).forall(point => {
+      GraphHelper.findEntities(point, state.graph).forall(target => {
         state.entityProperties(e.kind) match {
           case Some(entityProperties) =>
             entityProperties.interactionProperties(target.kind)
@@ -136,95 +153,123 @@ object GraphModelState {
         }
       })
     })
+    log.trace(s"EXIT  isInteractionAllowed(${e.toString}, ${p.toString}, $allowMove, [state]) => $result")
+    result
   }
 
-  private def isProximityAllowed(e: Entity, p: Position, state: GraphModelState): Boolean =
-    e.shiftCluster(p).forall(point => {
+  private def isProximityAllowed(e: Entity, p: Position, state: GraphModelState): Boolean = {
+    log.trace(s"ENTER isProximityAllowed(${e.toString}, ${p.toString}, [state])")
+    val result = e.shiftCluster(p).forall(point => {
       state.entityProperties(e.kind) match {
         case Some(entityProperties) =>
           entityProperties.proximity.forall(proximity => {
-            GraphLogic.findEntities(proximity.kind, state.graph).forall(targetEntity => {
-              GraphLogic.findPositions(targetEntity, state.graph).forall(targetPoint => {
+            GraphHelper.findEntities(proximity.kind, state.graph).forall(targetEntity => {
+              GraphHelper.findPositions(targetEntity, state.graph).forall(targetPoint => {
                 point.distanceFrom(targetPoint) > proximity.distance
               })
             })
           })
-        case None => false
+        case None => true
       }
     })
+    log.trace(s"EXIT  isProximityAllowed(${e.toString}, ${p.toString}, [state]) => $result")
+    result
+  }
 
-  private def isMotionAllowed(e: Entity, p: Position, state: GraphModelState): Boolean =
-    e.shiftCluster(p).forall(point => {
-      GraphLogic.findPositions(e, state.graph).forall(bodyPoint => {
+  private def isMotionAllowed(e: Entity, p: Position, state: GraphModelState): Boolean = {
+    log.trace(s"ENTER isMotionAllowed(${e.toString}, ${p.toString}, [state])")
+    val result = e.shiftCluster(p).forall(point => {
+      GraphHelper.findPositions(e, state.graph).forall(bodyPoint => {
         state.entityProperties(e.kind) match {
           case Some(entityProperties) => entityProperties.motion.distance >= point.distanceFrom(bodyPoint)
           case None => false
         }
       })
     })
+    log.trace(s"ENTER isMotionAllowed(${e.toString}, ${p.toString}, [state]) => $result")
+    result
+  }
 
-  private def randomAddablePosition(e: Entity, state: GraphModelState): Option[Position] =
-    shuffle(GraphLogic.allPositions(state.graph).toSeq, state.random).find(p => e.shiftCluster(p).forall(isAddable(e, _, state)))
+  private def randomAddablePosition(e: Entity, state: GraphModelState): Option[Position] = {
+    log.trace(s"ENTER randomAddablePosition(${e.toString}, [state])")
+    val p = shuffle(GraphHelper.allPositions(state.graph).toSeq, state.random).find(p => e.shiftCluster(p).forall(isAddable(e, _, state)))
+    log.trace(s"EXIT  randomAddablePosition(${e.toString}, [state]) => ${p.toString}")
+    p
+  }
 
-  private def randomMovablePosition(e: Entity, state: GraphModelState): Option[Position] =
-    shuffle(GraphLogic.allPositions(state.graph).toSeq, state.random).find(p => e.shiftCluster(p).forall(p => isAddable(e, p, state) && isMovable(e, p, state)))
+  private def randomMovablePosition(e: Entity, state: GraphModelState): Option[Position] = {
+    log.trace(s"ENTER randomMovablePosition(${e.toString}, [state])")
+    val p = shuffle(GraphHelper.allPositions(state.graph).toSeq, state.random).find(p => e.shiftCluster(p).forall(p => isAddable(e, p, state) && isMovable(e, p, state)))
+    log.trace(s"EXIT  randomMovablePosition(${e.toString}, [state]) => ${p.toString}")
+    p
+  }
 
   /* ************************************************************************
      PRIVATE METHODS: ENTITY
   ************************************************************************ */
 
-  private def add(kind: String, state: GraphModelState): GraphModelState =
+  private def add(kind: String, state: GraphModelState): GraphModelState = {
+    log.trace(s"ENTER add($kind, [state])")
     state.properties.entityProperties(kind) match {
       case Some(properties) =>
         add(kind, entity.EntityOptions(properties, state.random), state.copy(seed = state.random.seed.get()))
       case None =>
         add(kind, EntityOptions(), state)
     }
+  }
 
-  private def add(kind: String, options: EntityOptions, state: GraphModelState): GraphModelState =
+  private def add(kind: String, options: EntityOptions, state: GraphModelState): GraphModelState = {
+    log.trace(s"ENTER add($kind, ${options.toString}, [state])")
     add(Entity(kind, options), state)
+  }
 
-  private def add(kind: String, p: Position, state: GraphModelState): GraphModelState =
+  private def add(kind: String, p: Position, state: GraphModelState): GraphModelState = {
+    log.trace(s"ENTER add($kind, ${p.toString}, [state])")
     state.properties.entityProperties(kind) match {
       case Some(properties) =>
         add(kind, entity.EntityOptions(properties, state.random), p, state.copy(seed = state.random.seed.get()))
       case None =>
         add(kind, EntityOptions(), p, state)
     }
+  }
 
-  private def add(kind: String, options: EntityOptions, p: Position, state: GraphModelState): GraphModelState =
+  private def add(kind: String, options: EntityOptions, p: Position, state: GraphModelState): GraphModelState = {
+    log.trace(s"ENTER add($kind, ${options.toString}, ${p.toString}, [state])")
     add(Entity(kind, options), p, state)
+  }
 
-  private def add(e: Entity, state: GraphModelState): GraphModelState =
+  private def add(e: Entity, state: GraphModelState): GraphModelState = {
+    log.trace(s"ENTER add(${e.toString}, [state])")
     randomAddablePosition(e, state) match {
       case Some(p) => add(e, p, state)
       case None => state
     }
+  }
 
   private def add(e: Entity, p: Position, state: GraphModelState): GraphModelState =
     if (isGrowthAllowed(e, state) && isAddable(e, p, state)) {
-      val modifiedGraph = GraphLogic.addEntity(e, p, state.graph)
+      val modifiedGraph = GraphHelper.addEntity(e, p, state.graph)
       state.copy(graph = modifiedGraph)
     } else state
 
   private def move(e: Entity, state: GraphModelState): GraphModelState =
     randomMovablePosition(e, state) match {
       case Some(p) =>
-        val modifiedGraph = GraphLogic.moveEntity(e, p, state.graph)
+        val modifiedGraph = GraphHelper.moveEntity(e, p, state.graph)
         state.copy(graph = modifiedGraph)
       case None => state
     }
 
   private def move(e: Entity, p: Position, state: GraphModelState): GraphModelState =
     if (isMotionAllowed(e, p, state) && isMovable(e, p, state)) {
-      val modifiedGraph = GraphLogic.moveEntity(e, p, state.graph)
+      val modifiedGraph = GraphHelper.moveEntity(e, p, state.graph)
       state.copy(graph = modifiedGraph)
     }
     else state
 
   private def remove(e: Entity, state: GraphModelState): GraphModelState =
     if (isGrowthAllowed(e, state)) {
-      val modifiedGraph = GraphLogic.removeEntity(e, state.graph)
+      val modifiedGraph = GraphHelper.removeEntity(e, state.graph)
       state.copy(graph = modifiedGraph)
     } else state
 

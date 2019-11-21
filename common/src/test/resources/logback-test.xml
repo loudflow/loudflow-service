@@ -13,7 +13,7 @@
 
     <logger name="akka" level="WARN" />
 
-    <root level="DEBUG">
+    <root level="TRACE">
         <appender-ref ref="STDOUT" />
     </root>
 

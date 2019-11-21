@@ -24,20 +24,13 @@ import com.loudflow.domain.model.entity.Entity
 import com.loudflow.util.Span
 import org.slf4j.{Logger, LoggerFactory}
 
-import scala.collection.mutable
-// import scalax.collection.edge.{LBase, LDiEdge, LUnDiEdge}
-
-object GraphLogic {
+object GraphHelper {
 
   private final val log: Logger = LoggerFactory.getLogger("GraphLogic")
 
   /* ************************************************************************
      DEFINITIONS
   ************************************************************************ */
-
-  // implicit val lEdgeFactory: LBase.type = scalax.collection.edge.LBase
-  // implicit val lDiEdgeFactory: LDiEdge.type = scalax.collection.edge.LDiEdge
-  // implicit val lUnDiEdgeFactory: LUnDiEdge.type = scalax.collection.edge.LUnDiEdge
 
   type Graph = ScalaGraph[Node, EdgeLikeIn]
 

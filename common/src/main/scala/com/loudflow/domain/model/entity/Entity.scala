@@ -18,7 +18,7 @@ package com.loudflow.domain.model.entity
 import java.time.Instant
 import java.util.UUID
 
-import com.loudflow.domain.model.graph.GraphLogic.Node
+import com.loudflow.domain.model.graph.GraphHelper.Node
 import com.loudflow.domain.model.{Direction, Position}
 import com.loudflow.util.{JavaRandom, shuffle}
 import com.wix.accord.dsl._
