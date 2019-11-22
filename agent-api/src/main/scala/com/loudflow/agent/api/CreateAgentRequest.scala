@@ -15,37 +15,10 @@
 ************************************************************************ */
 package com.loudflow.agent.api
 
+import play.api.libs.json.{Format, Json}
+
 import com.loudflow.domain.agent.AgentProperties
 import com.loudflow.domain.model.ModelProperties
-import play.api.libs.json.{Format, Json}
-import com.wix.accord.dsl._
-import com.wix.accord.transform.ValidationTransform
 
-final case class CreateAgentRequest private(data: CreateAgentRequest.Data)
-
-object CreateAgentRequest {
-  implicit val format: Format[CreateAgentRequest] = Json.format
-  def apply(agent: AgentProperties, model: ModelProperties): CreateAgentRequest = {
-    new CreateAgentRequest(CreateAgentRequest.Data(Attributes(agent, model)))
-  }
-  implicit val propertiesValidator: ValidationTransform.TransformedValidator[CreateAgentRequest] = validator { properties =>
-    properties.data is valid
-  }
-  final case class Data(attributes: Attributes) {
-    val `type`: String = "agent"
-  }
-  object Data {
-    implicit val format: Format[Data] = Json.format
-    implicit val propertiesValidator: ValidationTransform.TransformedValidator[Data] = validator { properties =>
-      properties.attributes is valid
-    }
-  }
-  final case class Attributes(agent: AgentProperties, model: ModelProperties)
-  object Attributes {
-    implicit val format: Format[Attributes] = Json.format
-    implicit val propertiesValidator: ValidationTransform.TransformedValidator[Attributes] = validator { properties =>
-      properties.agent is valid
-      properties.model is valid
-    }
-  }
-}
+final case class CreateAgentRequest(agent: AgentProperties, model: ModelProperties)
+object CreateAgentRequest { implicit val format: Format[CreateAgentRequest] = Json.format }

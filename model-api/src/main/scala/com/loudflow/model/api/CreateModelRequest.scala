@@ -16,27 +16,8 @@
 package com.loudflow.model.api
 
 import play.api.libs.json.{Format, Json}
-import com.wix.accord.dsl._
-import com.wix.accord.transform.ValidationTransform
+
 import com.loudflow.domain.model.ModelProperties
 
-final case class CreateModelRequest private(data: CreateModelRequest.Data)
-
-object CreateModelRequest {
-  implicit val format: Format[CreateModelRequest] = Json.format
-  def apply(properties: ModelProperties): CreateModelRequest = {
-    new CreateModelRequest(CreateModelRequest.Data(properties))
-  }
-  implicit val propertiesValidator: ValidationTransform.TransformedValidator[CreateModelRequest] = validator { properties =>
-    properties.data is valid
-  }
-  final case class Data(attributes: ModelProperties) {
-    val `type`: String = "model"
-  }
-  object Data {
-    implicit val format: Format[Data] = Json.format
-    implicit val propertiesValidator: ValidationTransform.TransformedValidator[Data] = validator { properties =>
-      properties.attributes is valid
-    }
-  }
-}
+final case class CreateModelRequest(model: ModelProperties)
+object CreateModelRequest { implicit val format: Format[CreateModelRequest] = Json.format }

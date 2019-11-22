@@ -17,8 +17,6 @@ package com.loudflow.domain.model
 
 import com.loudflow.domain.model.entity.EntityProperties
 import com.loudflow.util.JavaRandom
-import com.wix.accord.dsl._
-import com.wix.accord.transform.ValidationTransform
 import play.api.libs.json._
 
 final case class ModelProperties
@@ -28,36 +26,21 @@ final case class ModelProperties
   seed: Long = JavaRandom.seedUniquifier ^ System.nanoTime,
   entities: Set[EntityProperties] = Set.empty
 ) {
+  require(modelType == ModelType.Graph && graph.isDefined, "Invalid argument 'graph' for ModelProperties.")
   def entityProperties(kind: String): Option[EntityProperties] = entities.find(_.kind == kind)
 }
 
-object ModelProperties {
-  implicit val format: Format[ModelProperties] = Json.format
-  implicit val propertiesValidator: ValidationTransform.TransformedValidator[ModelProperties] = validator { properties =>
-    if (properties.modelType == ModelType.Graph) {
-      properties.graph is notEmpty
-    }
-    properties.entities.each is valid
-  }
-}
+object ModelProperties { implicit val format: Format[ModelProperties] = Json.format }
 
 final case class GraphProperties(grid: Option[GridProperties])
-object GraphProperties {
-  implicit val format: Format[GraphProperties] = Json.format
-  implicit val propertiesValidator: ValidationTransform.TransformedValidator[GraphProperties] = validator { properties =>
-    properties.grid.each is valid
-  }
-}
+object GraphProperties { implicit val format: Format[GraphProperties] = Json.format }
 
-final case class GridProperties(xCount: Int, yCount: Int, zCount: Int = 0, cardinalOnly: Boolean = true)
-object GridProperties {
-  implicit val format: Format[GridProperties] = Json.format
-  implicit val propertiesValidator: ValidationTransform.TransformedValidator[GridProperties] = validator { properties =>
-    properties.xCount should be > 0
-    properties.yCount should be > 0
-    properties.zCount should be >= 0
-  }
+final case class GridProperties(xCount: Int, yCount: Int, zCount: Int = 0, cardinalOnly: Boolean = true) {
+  require(xCount > 0, "Invalid argument 'xCount' for GridProperties.")
+  require(yCount > 0, "Invalid argument 'yCount' for GridProperties.")
+  require(zCount >= 0, "Invalid argument 'zCount' for GridProperties.")
 }
+object GridProperties { implicit val format: Format[GridProperties] = Json.format }
 
 object ModelType {
 

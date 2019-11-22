@@ -15,20 +15,14 @@
 ************************************************************************ */
 package com.loudflow.domain.agent
 
-import com.wix.accord.transform.ValidationTransform
-import java.util.UUID
-
 import play.api.libs.json._
-import com.wix.accord.dsl._
+
 import com.loudflow.util.randomSeed
 
-final case class AgentProperties(agentType: AgentType.Value, seed: Long = randomSeed, interval: Int = 100)
-object AgentProperties {
-  implicit val format: Format[AgentProperties] = Json.format
-  implicit val propertiesValidator: ValidationTransform.TransformedValidator[AgentProperties] = validator { properties =>
-    properties.interval should be > 50
-  }
+final case class AgentProperties(agentType: AgentType.Value, seed: Long = randomSeed, interval: Int = 100) {
+  require(interval > 50, "Invalid argument 'interval' for AgentProperties.")
 }
+object AgentProperties { implicit val format: Format[AgentProperties] = Json.format }
 
 object AgentType {
 

@@ -15,20 +15,15 @@
 ************************************************************************ */
 package com.loudflow.domain.simulation
 
-import com.wix.accord.transform.ValidationTransform
-
 import play.api.libs.json._
-import com.wix.accord.dsl._
+
 import com.loudflow.util.randomSeed
 
-final case class SimulationProperties(time: TimeSystem.Value = TimeSystem.Event, seed: Long = randomSeed, interval: Int = 100, step: Int = 1)
-object SimulationProperties {
-  implicit val format: Format[SimulationProperties] = Json.format
-  implicit val propertiesValidator: ValidationTransform.TransformedValidator[SimulationProperties] = validator { properties =>
-    properties.interval should be > 50
-    properties.step should be > 0
-  }
+final case class SimulationProperties(time: TimeSystem.Value = TimeSystem.Event, seed: Long = randomSeed, interval: Int = 100, step: Int = 1) {
+  require(interval > 50, "Invalid argument 'interval' for SimulationProperties.")
+  require(step > 0, "Invalid argument 'step' for SimulationProperties.")
 }
+object SimulationProperties { implicit val format: Format[SimulationProperties] = Json.format }
 
 object TimeSystem {
 

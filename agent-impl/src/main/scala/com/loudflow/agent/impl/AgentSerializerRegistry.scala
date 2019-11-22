@@ -17,9 +17,11 @@ package com.loudflow.agent.impl
 
 import scala.collection.immutable.Seq
 import com.lightbend.lagom.scaladsl.playjson.{JsonSerializer, JsonSerializerRegistry}
+import com.loudflow.agent.api.ReadAgentResponse
 
 object AgentSerializerRegistry extends JsonSerializerRegistry {
   override def serializers: Seq[JsonSerializer[_]] = Seq(
+    JsonSerializer[ReadAgentResponse],
     JsonSerializer[CreateAgent],
     JsonSerializer[DestroyAgent],
     JsonSerializer[ReadAgent],

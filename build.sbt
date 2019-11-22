@@ -8,13 +8,13 @@ scalacOptions += "-Ypartial-unification -deprecation -unchecked"
 val macwire = "com.softwaremill.macwire" %% "macros" % "2.3.0" % "provided"
 val cats = "org.typelevel" %% "cats-core" % "2.0.0-RC1"
 val catsEffect = "org.typelevel" %% "cats-effect" % "2.0.0"
-val accord = "com.wix" %% "accord-core" % "0.7.3"
 val scalaGraph = "org.scala-graph" %% "graph-core" % "1.13.0"
 val scalaGraphJson = "org.scala-graph" %% "graph-json" % "1.12.1"
-val scalaTest = "org.scalatest" %% "scalatest" % "3.0.4" % Test
+val scalaTest = "org.scalatest" %% "scalatest" % "3.0.8" % "test"
+// val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 
-lazy val `loudflow` = (project in file("."))
+lazy val `loudflow-service` = (project in file("."))
   .aggregate(`common`, `agent-api`, `agent-impl`, `model-api`, `model-impl`, `simulation-api`, `simulation-impl`)
 
 lazy val `common` = (project in file("common"))
@@ -24,7 +24,6 @@ lazy val `common` = (project in file("common"))
       lagomScaladslPersistenceCassandra,
       scalaGraph,
       scalaGraphJson,
-      accord,
       cats,
       catsEffect,
       scalaTest,
@@ -36,7 +35,6 @@ lazy val `agent-api` = (project in file("agent-api"))
   .settings(
     libraryDependencies ++= Seq(
       lagomScaladslApi,
-      accord,
       logback
     )
   )
@@ -62,7 +60,6 @@ lazy val `model-api` = (project in file("model-api"))
   .settings(
     libraryDependencies ++= Seq(
       lagomScaladslApi,
-      accord,
       logback
     )
   )
@@ -81,14 +78,13 @@ lazy val `model-impl` = (project in file("model-impl"))
       logback
     )
   )
-  .settings(lagomForkedTestSettings)
+  .settings(lagomForkedTestSettings: _*)
   .dependsOn(`common`, `model-api`, `simulation-api`)
 
 lazy val `simulation-api` = (project in file("simulation-api"))
   .settings(
     libraryDependencies ++= Seq(
       lagomScaladslApi,
-      accord,
       logback
     )
   )

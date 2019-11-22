@@ -15,21 +15,14 @@
 ************************************************************************ */
 package com.loudflow.domain.simulation
 
+import play.api.libs.json._
+
 import com.loudflow.domain.model.ModelState
 import com.loudflow.util.JavaRandom
-import com.wix.accord.transform.ValidationTransform
-
-import play.api.libs.json._
-import com.wix.accord.dsl._
 
 final case class SimulationState(properties: SimulationProperties, seed: Long, model: ModelState, ticks: Long = 1L, isRunning: Boolean = false) {
+  require(ticks > 0L, "Invalid argument 'ticks' for SimulationState.")
   val random: JavaRandom = new JavaRandom(seed)
   def time: Long = properties.interval * ticks
 }
-object SimulationState {
-  implicit val format: Format[SimulationState] = Json.format
-  implicit val propertiesValidator: ValidationTransform.TransformedValidator[SimulationState] = validator { properties =>
-    properties.ticks should be > 0L
-    properties.model is valid
-  }
-}
+object SimulationState { implicit val format: Format[SimulationState] = Json.format }

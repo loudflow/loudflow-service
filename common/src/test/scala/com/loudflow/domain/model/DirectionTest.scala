@@ -21,22 +21,23 @@ import org.slf4j.{Logger, LoggerFactory}
 
 class DirectionTest extends FunSuite with BeforeAndAfter {
 
-  private final val log: Logger = LoggerFactory.getLogger(classOf[DirectionTest])
+  // private final val log: Logger = LoggerFactory.getLogger(classOf[DirectionTest])
+
   val origin = Position(0, 0)
 
   test("step in direction: north, step:1") {
     val p = Direction.stepInDirection(origin, Direction.North, 1)
     assert(p.get.x == 0.0 && p.get.y == 1.0)
   }
-  test("step in direction: north, step:2, span:(0,1)") {
+  test("step in direction: North, step:2, span:(0,1)") {
     val p = Direction.stepInDirection(origin, Direction.North, 2, Some(Span(0, 1.0)), Some(Span(0, 1.0)))
     assert(p.isEmpty)
   }
-  test("step in direction: northwest, step:1") {
+  test("step in direction: NorthWest, step:1") {
     val p = Direction.stepInDirection(origin, Direction.NorthWest, 1)
     assert(p.get.x == -1.0 && p.get.y == 1.0)
   }
-  test("step in direction: northwestbelow, step:1") {
+  test("step in direction: NorthWestBelow, step:1") {
     val p = Direction.stepInDirection(origin, Direction.NorthWestBelow, 1)
     assert(p.get.x == -1.0 && p.get.y == 1.0 && p.get.z == -1.0)
   }

@@ -18,14 +18,5 @@ package com.loudflow.model.api
 import play.api.libs.json.{Format, Json}
 import com.loudflow.domain.model.ModelState
 
-final case class ReadModelResponse private(data: ReadModelResponse.Data)
-object ReadModelResponse {
-  implicit val format: Format[ReadModelResponse] = Json.format
-  def apply(id: String, state: ModelState): ReadModelResponse = {
-    new ReadModelResponse(ReadModelResponse.Data(id, state))
-  }
-  final case class Data(id: String, attributes: ModelState) {
-    val `type`: String = "model"
-  }
-  object Data { implicit val format: Format[Data] = Json.format }
-}
+final case class ReadModelResponse(id: String, state: ModelState)
+object ReadModelResponse { implicit val format: Format[ReadModelResponse] = Json.format }

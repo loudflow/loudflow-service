@@ -17,9 +17,11 @@ package com.loudflow.model.impl
 
 import scala.collection.immutable.Seq
 import com.lightbend.lagom.scaladsl.playjson.{JsonSerializer, JsonSerializerRegistry}
+import com.loudflow.model.api.ReadModelResponse
 
 object ModelSerializerRegistry extends JsonSerializerRegistry {
   override def serializers: Seq[JsonSerializer[_]] = Seq(
+    JsonSerializer[ReadModelResponse],
     JsonSerializer[CreateModel],
     JsonSerializer[DestroyModel],
     JsonSerializer[ReadModel],

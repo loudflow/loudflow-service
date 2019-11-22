@@ -21,6 +21,7 @@ import com.lightbend.lagom.scaladsl.persistence.PersistentEntity
 import com.loudflow.domain.Message
 import com.loudflow.domain.model._
 import com.loudflow.domain.model.entity.EntityOptions
+import com.loudflow.model.api.ReadModelResponse
 
 sealed trait ModelCommand extends Message {
   def demuxer: String
@@ -40,7 +41,7 @@ final case class DestroyModel(traceId: String) extends ModelCommand with Persist
 }
 object DestroyModel { implicit val format: Format[DestroyModel] = Json.format }
 
-final case class ReadModel(traceId: String) extends ModelCommand with PersistentEntity.ReplyType[ModelState] {
+final case class ReadModel(traceId: String) extends ModelCommand with PersistentEntity.ReplyType[ReadModelResponse] {
   val demuxer = "read-model"
 }
 object ReadModel { implicit val format: Format[ReadModel] = Json.format }
@@ -49,7 +50,7 @@ object ReadModel { implicit val format: Format[ReadModel] = Json.format }
    Action Commands
 ************************************************************************ */
 
-final case class AddEntity(traceId: String, kind: String, options: Option[EntityOptions], position: Option[Position]) extends ModelCommand with PersistentEntity.ReplyType[Done] {
+final case class AddEntity(traceId: String, kind: String, options: Option[EntityOptions] = None, position: Option[Position] = None) extends ModelCommand with PersistentEntity.ReplyType[Done] {
   val demuxer = "add-entity"
 }
 object AddEntity { implicit val format: Format[AddEntity] = Json.format }
@@ -59,7 +60,7 @@ final case class RemoveEntity(traceId: String, entityId: String) extends ModelCo
 }
 object RemoveEntity { implicit val format: Format[RemoveEntity] = Json.format }
 
-final case class MoveEntity(traceId: String, entityId: String, position: Option[Position]) extends ModelCommand with PersistentEntity.ReplyType[Done] {
+final case class MoveEntity(traceId: String, entityId: String, position: Option[Position] = None) extends ModelCommand with PersistentEntity.ReplyType[Done] {
   val demuxer = "move-entity"
 }
 object MoveEntity { implicit val format: Format[MoveEntity] = Json.format }

@@ -18,8 +18,6 @@ package com.loudflow.domain.model
 import com.loudflow.domain.model.entity.{Entity, EntityOptions, EntityProperties}
 import com.loudflow.domain.model.graph.GraphModelState
 import com.loudflow.util.JavaRandom
-import com.wix.accord.dsl._
-import com.wix.accord.transform.ValidationTransform
 import play.api.libs.json._
 
 trait ModelState {
@@ -49,10 +47,6 @@ object ModelState {
       case command: GraphModelState => (Json.toJson(command)(GraphModelState.format), "graph")
     }
     jsValue.transform(JsPath.json.update((JsPath \ 'demuxer).json.put(JsString(demuxer)))).get
-  }
-
-  implicit val propertiesValidator: ValidationTransform.TransformedValidator[ModelState] = validator { properties =>
-    properties.properties is valid
   }
 
   def apply(id: String, properties: ModelProperties): ModelState = properties.modelType match {

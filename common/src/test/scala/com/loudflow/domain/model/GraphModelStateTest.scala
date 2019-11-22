@@ -24,7 +24,7 @@ import org.slf4j.{Logger, LoggerFactory}
 
 class GraphModelStateTest extends FunSuite with BeforeAndAfter {
 
-  private final val log: Logger = LoggerFactory.getLogger(classOf[GraphModelStateTest])
+  // private final val log: Logger = LoggerFactory.getLogger(classOf[GraphModelStateTest])
 
   val id: String = UUID.randomUUID().toString
   val xCount = 10

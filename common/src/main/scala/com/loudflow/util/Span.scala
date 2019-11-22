@@ -15,8 +15,6 @@
 ************************************************************************ */
 package com.loudflow.util
 
-import com.wix.accord.dsl._
-import com.wix.accord.transform.ValidationTransform
 import play.api.libs.json.{Format, Json}
 
 sealed trait DiscreteOrContinuous[T] {
@@ -52,10 +50,4 @@ final case class Span[T](min: T, max: T)(implicit val dc: DiscreteOrContinuous[T
 object Span {
   implicit val intFormat: Format[Span[Int]] = Json.format
   implicit val doubleFormat: Format[Span[Double]] = Json.format
-  implicit val intPropertiesValidator: ValidationTransform.TransformedValidator[Span[Int]] = validator { properties =>
-    properties.max should be >= properties.min
-  }
-  implicit val doublePropertiesValidator: ValidationTransform.TransformedValidator[Span[Double]] = validator { properties =>
-    properties.max should be >= properties.min
-  }
 }

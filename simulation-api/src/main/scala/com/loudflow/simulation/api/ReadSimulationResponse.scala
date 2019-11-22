@@ -15,18 +15,8 @@
 ************************************************************************ */
 package com.loudflow.simulation.api
 
-import com.loudflow.domain.model.graph.GraphModelState
 import play.api.libs.json._
 import com.loudflow.domain.simulation.SimulationState
 
-final case class ReadSimulationResponse private(data: ReadSimulationResponse.Data)
-object ReadSimulationResponse {
-  implicit val format: Format[ReadSimulationResponse] = Json.format
-  def apply(id: String, state: SimulationState): ReadSimulationResponse = state.model match {
-    case _: GraphModelState => new ReadSimulationResponse(Data(id, state))
-  }
-  final case class Data(id: String, attributes: SimulationState) {
-    val `type`: String = "simulation"
-  }
-  object Data { implicit val format: Format[Data] = Json.format }
-}
+final case class ReadSimulationResponse(id: String, state: SimulationState)
+object ReadSimulationResponse { implicit val format: Format[ReadSimulationResponse] = Json.format }

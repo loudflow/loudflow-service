@@ -21,8 +21,6 @@ import java.util.UUID
 import com.loudflow.domain.model.graph.GraphHelper.Node
 import com.loudflow.domain.model.{Direction, Position}
 import com.loudflow.util.{JavaRandom, shuffle}
-import com.wix.accord.dsl._
-import com.wix.accord.transform.ValidationTransform
 import play.api.libs.json._
 
 final case class Entity
@@ -33,6 +31,10 @@ final case class Entity
   options: EntityOptions,
   created: Long
 ) extends Node {
+  require(if (options.cluster.isDefined) options.cluster.get.length > 1 else true, "Invalid argument 'options.cluster' for Entity.")
+  require(if (options.group.isDefined) options.group.get > 0 else true, "Invalid argument 'options.group' for Entity.")
+  require(if (options.lifeSpan.isDefined) options.lifeSpan.get > 0 else true, "Invalid argument 'options.group' for Entity.")
+  require(created > 0L, "Invalid argument 'created' for Entity.")
   def shiftCluster(): Array[Position] = options.cluster match {
     case Some(cluster) => position match {
         case Some(p) => Entity.shiftCluster(p, cluster)
@@ -57,13 +59,6 @@ final case class Entity
 object Entity {
 
   implicit val format: Format[Entity] = Json.format
-
-  implicit val propertiesValidator: ValidationTransform.TransformedValidator[Entity] = validator { properties =>
-    if (properties.options.cluster.isDefined) properties.options.cluster.get.length should be > 1
-    properties.options.group.each should be > 0
-    properties.options.lifeSpan.each should be > 0
-    properties.created should be > 0L
-  }
 
   def apply(kind: String, position: Position, options: EntityOptions): Entity = new Entity(UUID.randomUUID().toString, kind, Some(position), options, Instant.now().toEpochMilli)
   def apply(kind: String, options: EntityOptions): Entity = new Entity(UUID.randomUUID().toString, kind, None, options, Instant.now().toEpochMilli)

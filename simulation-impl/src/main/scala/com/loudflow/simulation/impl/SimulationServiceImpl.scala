@@ -31,7 +31,6 @@ import com.lightbend.lagom.scaladsl.broker.TopicProducer
 import com.lightbend.lagom.scaladsl.persistence.{EventStreamElement, PersistentEntityRef, PersistentEntityRegistry}
 import com.lightbend.lagom.scaladsl.server.ServerServiceCall
 import com.loudflow.api.{CommandResponse, HealthResponse}
-import com.wix.accord.validate
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -61,8 +60,7 @@ class SimulationServiceImpl(modelService: ModelService, persistentEntityRegistry
     ServerServiceCall { request =>
       val id = UUID.randomUUID.toString
       log.trace(s"[$traceId] Request body: $request")
-      validate(request)
-      val command = CreateSimulation(traceId, request.data.attributes.simulation, request.data.attributes.model)
+      val command = CreateSimulation(traceId, request.simulation, request.model)
       createPersistentEntity(id).ask(command).map(_ => accepted(id, command))
     }
   }
@@ -109,13 +107,13 @@ class SimulationServiceImpl(modelService: ModelService, persistentEntityRegistry
     }
   }
 
-  def trace[Request, Response](serviceCall: String => ServerServiceCall[Request, Response]): ServerServiceCall[Request, Response] = ServerServiceCall.compose(header => {
+  private def trace[Request, Response](serviceCall: String => ServerServiceCall[Request, Response]): ServerServiceCall[Request, Response] = ServerServiceCall.compose(header => {
     val traceId = UUID.randomUUID.toString
     log.trace(s"[$traceId] SimulationService received request ${header.method} ${header.uri}")
     serviceCall(traceId)
   })
 
-  def accepted(id: String, command: SimulationCommand): CommandResponse = {
+  private def accepted(id: String, command: SimulationCommand): CommandResponse = {
     val commandName = command.getClass.getSimpleName
     log.trace(s"[${command.traceId}] SimulationService accepted command [$commandName]")
     CommandResponse("simulation", id, commandName)

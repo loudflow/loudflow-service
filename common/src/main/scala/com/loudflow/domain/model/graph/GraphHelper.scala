@@ -26,7 +26,7 @@ import org.slf4j.{Logger, LoggerFactory}
 
 object GraphHelper {
 
-  private final val log: Logger = LoggerFactory.getLogger("GraphLogic")
+  // private final val log: Logger = LoggerFactory.getLogger("GraphLogic")
 
   /* ************************************************************************
      DEFINITIONS

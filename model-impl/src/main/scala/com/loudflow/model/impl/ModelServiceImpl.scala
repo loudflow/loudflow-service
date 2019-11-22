@@ -27,7 +27,6 @@ import com.lightbend.lagom.scaladsl.broker.TopicProducer
 import com.lightbend.lagom.scaladsl.persistence.{EventStreamElement, PersistentEntityRef, PersistentEntityRegistry}
 import com.lightbend.lagom.scaladsl.server.ServerServiceCall
 import com.loudflow.api.{CommandResponse, HealthResponse}
-import com.wix.accord.validate
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import com.loudflow.model.api.{CreateModelRequest, ModelService, ReadModelResponse}
@@ -37,11 +36,13 @@ class ModelServiceImpl(simulationService: SimulationService, persistentEntityReg
 
   private final val log: Logger = LoggerFactory.getLogger(classOf[ModelServiceImpl])
 
+  persistentEntityRegistry.register(new ModelPersistentEntity)
+
   simulationService.actionTopic.subscribe.atLeastOnce(
     Flow.fromFunction(action => {
       log.trace(s"[${action.traceId}] SimulationService received model change event [$action]")
       ModelCommand.fromAction(action).foreach(command => {
-        getPersistentEntity(action.modelId).ask(command)
+        persistentEntity(action.modelId).ask(command)
       })
       Done
     })
@@ -59,25 +60,22 @@ class ModelServiceImpl(simulationService: SimulationService, persistentEntityReg
     ServerServiceCall { request =>
       val id = UUID.randomUUID.toString
       log.trace(s"[$traceId] Request body: $request")
-      validate(request)
-      val command = CreateModel(traceId, request.data.attributes)
-      createPersistentEntity(id).ask(command).map(_ => accepted(id, command))
+      val command = CreateModel(traceId, request.model)
+      persistentEntity(id).ask(command).map(_ => accepted(id, command))
     }
   }
 
   override def destroyModel(id: String): ServerServiceCall[NotUsed, CommandResponse] = trace { traceId =>
     ServerServiceCall { _ =>
       val command = DestroyModel(traceId)
-      getPersistentEntity(id).ask(command).map(_ => accepted(id, command))
+      persistentEntity(id).ask(command).map(_ => accepted(id, command))
     }
   }
 
   override def readModel(id: String): ServiceCall[NotUsed, ReadModelResponse] = trace { traceId =>
     ServerServiceCall { _ => {
       val command = ReadModel(traceId)
-      getPersistentEntity(id).ask(command).map(state => {
-        ReadModelResponse(id, state)
-      })
+      persistentEntity(id).ask(command)
     }}
   }
 
@@ -102,8 +100,6 @@ class ModelServiceImpl(simulationService: SimulationService, persistentEntityReg
     case event: ModelEvent => ModelEvent.toChange(event)
   }
 
-  private def createPersistentEntity(id: String): PersistentEntityRef[ModelCommand] = persistentEntityRegistry.refFor[ModelPersistentEntity](id)
-
-  private def getPersistentEntity(id: String): PersistentEntityRef[ModelCommand] = persistentEntityRegistry.refFor[ModelPersistentEntity](id)
+  private def persistentEntity(id: String): PersistentEntityRef[ModelCommand] = persistentEntityRegistry.refFor[ModelPersistentEntity](id)
 
 }

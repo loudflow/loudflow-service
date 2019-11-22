@@ -31,7 +31,6 @@ import com.lightbend.lagom.scaladsl.persistence.{EventStreamElement, PersistentE
 import com.lightbend.lagom.scaladsl.server.ServerServiceCall
 import com.loudflow.agent.api.{AgentService, CreateAgentRequest, ReadAgentResponse}
 import com.loudflow.api.{CommandResponse, HealthResponse}
-import com.wix.accord.validate
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -61,8 +60,7 @@ class AgentServiceImpl(modelService: ModelService, persistentEntityRegistry: Per
     ServerServiceCall { request =>
       val id = UUID.randomUUID.toString
       log.trace(s"[$traceId] Request body: $request")
-      validate(request)
-      val command = CreateAgent(traceId, request.data.attributes.agent, request.data.attributes.model)
+      val command = CreateAgent(traceId, request.agent, request.model)
       createPersistentEntity(id).ask(command).map(_ => accepted(id, command))
     }
   }

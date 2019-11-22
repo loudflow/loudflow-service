@@ -17,8 +17,6 @@ package com.loudflow.domain.model.entity
 
 import com.loudflow.domain.model.Position
 import com.loudflow.util.Span
-import com.wix.accord.dsl._
-import com.wix.accord.transform.ValidationTransform
 import play.api.libs.json._
 
 final case class EntityProperties
@@ -33,19 +31,10 @@ final case class EntityProperties
   cluster: Option[ClusterProperties],
   grouping: Option[Int]
 ) {
+  require(grouping.isDefined && grouping.get > 0, "Invalid argument 'grouping' for EntityProperties.")
   def interactionProperties(target: String): Set[InteractionProperties] = interactions.filter(_.target.kind == target)
 }
-
-object EntityProperties {
-  implicit val format: Format[EntityProperties] = Json.format
-  implicit val propertiesValidator: ValidationTransform.TransformedValidator[EntityProperties] = validator { properties =>
-    properties.population is valid
-    properties.motion is valid
-    properties.cluster.each is valid
-    properties.grouping.each should be > 0
-    properties.proximity.each is valid
-  }
-}
+object EntityProperties { implicit val format: Format[EntityProperties] = Json.format }
 
 object EntityCategory {
 
@@ -80,45 +69,28 @@ object EntityCategory {
   }
 }
 
-final case class PopulationProperties(range: Span[Int], growth: Option[Int], lifeSpanRange: Option[Span[Int]])
-
-object PopulationProperties {
-  implicit val format: Format[PopulationProperties] = Json.format
-  implicit val propertiesValidator: ValidationTransform.TransformedValidator[PopulationProperties] = validator { properties =>
-    properties.range is valid
-    properties.growth.each should be >= 0
-    properties.lifeSpanRange.each is valid
-    if (properties.lifeSpanRange.isDefined) properties.lifeSpanRange.get.min should be > 0
-  }
+final case class PopulationProperties(range: Span[Int], growth: Option[Int], lifeSpanRange: Option[Span[Int]]) {
+  require(growth.isDefined && growth.get >= 0, "Invalid argument 'growth' for PopulationProperties..")
+  require(lifeSpanRange.isDefined && lifeSpanRange.get.min > 0, "Invalid argument 'lifeSpanRange' for PopulationProperties..")
 }
+object PopulationProperties { implicit val format: Format[PopulationProperties] = Json.format }
 
-final case class ClusterProperties(size: Span[Int] = Span(0, 0), step: Int = 0, locations: Array[Position] = Array.empty, is3D: Boolean = false, autoGenerate: Boolean = true)
-
-object ClusterProperties {
-  implicit val format: Format[ClusterProperties] = Json.format
-  implicit val propertiesValidator: ValidationTransform.TransformedValidator[ClusterProperties] = validator { properties =>
-    if (properties.autoGenerate) properties.size.min should be > 0
-    if (properties.autoGenerate) properties.step should be > 0
-    if (!properties.autoGenerate) properties.locations is notEmpty
-  }
+final case class ClusterProperties(size: Span[Int] = Span(0, 0), step: Int = 0, locations: Array[Position] = Array.empty, is3D: Boolean = false, autoGenerate: Boolean = true) {
+  require(autoGenerate && size.min > 0, "Invalid argument 'size.min' for ClusterProperties. For auto-generated clusters, minimum size must be greater than zero.")
+  require(autoGenerate && step > 0, "Invalid argument 'step' for ClusterProperties. For auto-generated clusters, step must be greater than zero.")
+  require(!autoGenerate && locations.nonEmpty, "Invalid argument 'locations' for ClusterProperties. For pre-defined clusters, locations cannot be empty.")
 }
+object ClusterProperties { implicit val format: Format[ClusterProperties] = Json.format }
 
-final case class MotionProperties(distance: Int)
-
-object MotionProperties {
-  implicit val format: Format[MotionProperties] = Json.format
-  implicit val propertiesValidator: ValidationTransform.TransformedValidator[MotionProperties] = validator { properties =>
-    properties.distance should be > 0
-  }
+final case class MotionProperties(distance: Int) {
+  require(distance > 0, "Invalid argument 'distance' for MotionProperties.")
 }
+object MotionProperties { implicit val format: Format[MotionProperties] = Json.format }
 
-final case class ProximityProperties(kind: String, distance: Int)
-object ProximityProperties {
-  implicit val format: Format[ProximityProperties] = Json.format
-  implicit val propertiesValidator: ValidationTransform.TransformedValidator[ProximityProperties] = validator { properties =>
-    properties.distance should be >= 0
-  }
+final case class ProximityProperties(kind: String, distance: Int) {
+  require(distance >= 0, "Invalid argument 'distance' for ProximityProperties.")
 }
+object ProximityProperties { implicit val format: Format[ProximityProperties] = Json.format }
 
 final case class InteractionProperties(target: Participant, trigger: Option[Participant], result: InteractionResult.Value = InteractionResult.ActorBlocked, score: Option[Int] = None, scoreDecayRate: Option[Int] = None)
 object InteractionProperties { implicit val format: Format[InteractionProperties] = Json.format }
