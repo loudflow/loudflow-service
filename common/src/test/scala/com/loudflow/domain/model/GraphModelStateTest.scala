@@ -31,7 +31,7 @@ class GraphModelStateTest extends FunSuite with BeforeAndAfter {
   val yCount = 10
   val gridProperties = GridProperties(xCount, yCount)
   val graphProperties = GraphProperties(Some(gridProperties))
-  val modelProperties = ModelProperties(ModelType.Graph, Some(graphProperties))
+  val modelProperties = ModelProperties(ModelType.GRAPH, Some(graphProperties))
 
   val entity0 = Entity("agent::random", EntityOptions())
 

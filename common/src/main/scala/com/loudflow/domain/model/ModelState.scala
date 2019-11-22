@@ -50,7 +50,7 @@ object ModelState {
   }
 
   def apply(id: String, properties: ModelProperties): ModelState = properties.modelType match {
-    case ModelType.Graph => GraphModelState(id, properties)
+    case ModelType.GRAPH => GraphModelState(id, properties)
   }
 
   /* ************************************************************************
@@ -58,7 +58,7 @@ object ModelState {
   ************************************************************************ */
 
   def create(id: String, properties: ModelProperties): ModelState = properties.modelType match {
-    case ModelType.Graph => GraphModelState.create(id, properties)
+    case ModelType.GRAPH => GraphModelState.create(id, properties)
   }
 
   def destroy(state: ModelState): ModelState = state match {

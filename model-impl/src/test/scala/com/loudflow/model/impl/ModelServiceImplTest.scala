@@ -17,12 +17,15 @@ package com.loudflow.model.impl
 
 import java.util.UUID
 
+import akka.actor.ActorSystem
+import akka.stream.Materializer
+import akka.stream.testkit.javadsl.TestSink
 import com.lightbend.lagom.scaladsl.api.broker.Topic
 import org.scalatest.{AsyncWordSpec, BeforeAndAfterAll, Matchers}
 import com.lightbend.lagom.scaladsl.server.LocalServiceLocator
-import com.lightbend.lagom.scaladsl.testkit.ServiceTest
+import com.lightbend.lagom.scaladsl.testkit.{ServiceTest, TestTopicComponents}
 import com.loudflow.api.HealthResponse
-import com.loudflow.domain.model.{GraphProperties, GridProperties, ModelAction, ModelProperties, ModelType}
+import com.loudflow.domain.model.{GraphProperties, GridProperties, ModelAction, ModelChange, ModelProperties, ModelType}
 import com.loudflow.model.api.{CreateModelRequest, ModelService}
 import com.loudflow.simulation.api.SimulationService
 import org.slf4j.{Logger, LoggerFactory}
@@ -32,15 +35,10 @@ class ModelServiceImplTest extends AsyncWordSpec with Matchers with BeforeAndAft
   private final val log: Logger = LoggerFactory.getLogger(classOf[ModelServiceImplTest])
 
   private lazy val server = ServiceTest.startServer(ServiceTest.defaultSetup.withCassandra()) { ctx =>
-    new ModelApplication(ctx) with LocalServiceLocator
-/*
-    new ModelApplication(ctx) with LocalServiceLocator {
-      override lazy val simulationService = new SimulationService {
-        override def actionTopic: Topic[ModelAction] = ???
-      }
-    }
-*/
+    new ModelApplication(ctx) with LocalServiceLocator // with TestTopicComponents
   }
+  implicit private val system: ActorSystem = server.actorSystem
+  implicit private val materializer: Materializer = server.materializer
 
   private lazy val client: ModelService = server.serviceClient.implement[ModelService]
 
@@ -73,9 +71,22 @@ class ModelServiceImplTest extends AsyncWordSpec with Matchers with BeforeAndAft
       client.createModel.invoke(request).map { response =>
         log.debug(s"RESPONSE: $response")
         // response should ===(HealthResponse("model", Some(id.toString)))
-        assert(condition = true)
+        assert(true)
       }
     }
+
+/*
+    "publish ModelChange messages" in  {
+      val source = client.changeTopic.subscribe.atMostOnceSource
+      source
+        .runWith(TestSink.probe[ModelChange])
+        .request(1)
+        .expectNext should ===(PubMessage("msg 1"))
+      log.debug(s"RESPONSE: $response")
+      // response should ===(HealthResponse("model", Some(id.toString)))
+      assert(true)
+    }
+*/
 
   }
 

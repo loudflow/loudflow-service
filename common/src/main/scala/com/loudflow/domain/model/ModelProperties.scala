@@ -26,39 +26,24 @@ final case class ModelProperties
   seed: Long = JavaRandom.seedUniquifier ^ System.nanoTime,
   entities: Set[EntityProperties] = Set.empty
 ) {
-  require(modelType == ModelType.Graph && graph.isDefined, "Invalid argument 'graph' for ModelProperties.")
+  require(modelType == ModelType.GRAPH && graph.isDefined, "Invalid argument 'graph' for ModelProperties.")
   def entityProperties(kind: String): Option[EntityProperties] = entities.find(_.kind == kind)
 }
 
 object ModelProperties { implicit val format: Format[ModelProperties] = Json.format }
 
+object ModelType extends Enumeration {
+  type ModelType = Value
+  val GRAPH: ModelType.Value = Value
+  implicit val format: Format[ModelType.Value] = Json.formatEnum(this)
+}
+
 final case class GraphProperties(grid: Option[GridProperties])
 object GraphProperties { implicit val format: Format[GraphProperties] = Json.format }
 
-final case class GridProperties(xCount: Int, yCount: Int, zCount: Int = 0, cardinalOnly: Boolean = true) {
-  require(xCount > 0, "Invalid argument 'xCount' for GridProperties.")
-  require(yCount > 0, "Invalid argument 'yCount' for GridProperties.")
-  require(zCount >= 0, "Invalid argument 'zCount' for GridProperties.")
+final case class GridProperties(rows: Int, cols: Int, layers: Int = 0, cardinalOnly: Boolean = true) {
+  require(rows > 0, "Invalid argument 'rows' for GridProperties.")
+  require(cols > 0, "Invalid argument 'cols' for GridProperties.")
+  require(layers >= 0, "Invalid argument 'layers' for GridProperties.")
 }
 object GridProperties { implicit val format: Format[GridProperties] = Json.format }
-
-object ModelType {
-
-  sealed trait Value
-
-  final case object Graph extends Value {
-    val demuxer = "graph"
-  }
-
-  val values: Set[Value] = Set(Graph)
-
-  implicit val reads: Reads[Value] = Reads { json =>
-    (JsPath \ "demuxer").read[String].reads(json).flatMap {
-      case "graph" => JsSuccess(Graph)
-      case other => JsError(s"Read Model.Type failed due to unknown enumeration value $other.")
-    }
-  }
-  implicit val writes: Writes[Value] = Writes {
-    case Graph => JsObject(Seq("demuxer" -> JsString("graph")))
-  }
-}

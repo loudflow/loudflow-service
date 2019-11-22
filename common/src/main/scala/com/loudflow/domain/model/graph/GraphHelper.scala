@@ -67,28 +67,28 @@ object GraphHelper {
 
   def buildPositionLayer(gridProperties: GridProperties): Graph = {
     val g = emptyGraph
-    val xSpan = Span(1, gridProperties.xCount.toDouble)
-    val ySpan = Span(1, gridProperties.yCount.toDouble)
-    if (gridProperties.zCount > 0) build3DPositionLayer(gridProperties, xSpan, ySpan, g)
-    else build2DPositionLayer(gridProperties, xSpan, ySpan, g)
+    val rowSpan = Span(1, gridProperties.rows.toDouble)
+    val colSpan = Span(1, gridProperties.cols.toDouble)
+    if (gridProperties.layers > 0) build3DPositionLayer(gridProperties, rowSpan, colSpan, g)
+    else build2DPositionLayer(gridProperties, rowSpan, colSpan, g)
   }
 
-  private def build2DPositionLayer(gridProperties: GridProperties, xSpan: Span[Double], ySpan: Span[Double], g: Graph): Graph = {
+  private def build2DPositionLayer(gridProperties: GridProperties, rowSpan: Span[Double], colSpan: Span[Double], g: Graph): Graph = {
     val positions = for {
-      x <- 1 to gridProperties.xCount
-      y <- 1 to gridProperties.yCount
-    } yield Position(x, y)
+      row <- 1 to gridProperties.rows
+      col <- 1 to gridProperties.cols
+    } yield Position(col, row)
     positions.foreach(addPosition(_, g))
     positions.foreach(p1 => {
       if (gridProperties.cardinalOnly) {
         Direction.cardinal.foreach(direction => {
-          Direction.stepInDirection(p1, direction, 1, Some(xSpan), Some(ySpan)).foreach(p2 => {
+          Direction.stepInDirection(p1, direction, 1, Some(colSpan), Some(rowSpan)).foreach(p2 => {
             positions.find(p => p.x == p2.x && p.y == p2.y).foreach(connect(p1, _, g))
           })
         })
       } else
         Direction.compass.foreach(direction => {
-          Direction.stepInDirection(p1, direction, 1, Some(xSpan), Some(ySpan)).foreach(p2 => {
+          Direction.stepInDirection(p1, direction, 1, Some(colSpan), Some(rowSpan)).foreach(p2 => {
             positions.find(p => p.x == p2.x && p.y == p2.y).foreach(connect(p1, _, g))
           })
         })
@@ -96,24 +96,24 @@ object GraphHelper {
     g
   }
 
-  private def build3DPositionLayer(gridProperties: GridProperties, xSpan: Span[Double], ySpan: Span[Double], g: Graph): Graph = {
-    val zSpan = Span(1, gridProperties.zCount.toDouble)
+  private def build3DPositionLayer(gridProperties: GridProperties, rowSpan: Span[Double], colSpan: Span[Double], g: Graph): Graph = {
+    val layerSpan = Span(1, gridProperties.layers.toDouble)
     val positions = for {
-      x <- 1 to gridProperties.xCount
-      y <- 1 to gridProperties.yCount
-      z <- 1 to gridProperties.zCount
-    } yield Position(x, y, z)
+      row <- 1 to gridProperties.rows
+      col <- 1 to gridProperties.cols
+      layer <- 1 to gridProperties.layers
+    } yield Position(col, row, layer)
     positions.foreach(addPosition(_, g))
     positions.foreach(p => {
       if (gridProperties.cardinalOnly)
         Direction.cardinal3D.foreach(direction => {
-          Direction.stepInDirection(p, direction, 1, Some(xSpan), Some(ySpan), Some(zSpan)).foreach(p2 => {
+          Direction.stepInDirection(p, direction, 1, Some(colSpan), Some(rowSpan), Some(layerSpan)).foreach(p2 => {
             positions.find(p => p.x == p2.x && p.y == p2.y && p.z == p2.z).foreach(connect(p, _, g))
           })
         })
       else
         Direction.compass3D.foreach(direction => {
-          Direction.stepInDirection(p, direction, 1, Some(xSpan), Some(ySpan), Some(zSpan)).foreach(p2 => {
+          Direction.stepInDirection(p, direction, 1, Some(colSpan), Some(rowSpan), Some(layerSpan)).foreach(p2 => {
             positions.find(p => p.x == p2.x && p.y == p2.y && p.z == p2.z).foreach(connect(p, _, g))
           })
         })
@@ -133,9 +133,9 @@ object GraphHelper {
   }
 
   def displayGridAsAscii(g: Graph, gridProperties: GridProperties, title: String, mapper: Option[Entity] => String): IO[Unit] = IO {
-    if (gridProperties.zCount > 0) {
+    if (gridProperties.layers > 0) {
       for {
-        z <- 1 to gridProperties.zCount
+        z <- 1 to gridProperties.layers
       } yield display2DGridAsAscii(g, gridProperties, title, Some(z), mapper)
     }
     else display2DGridAsAscii(g, gridProperties, title, None, mapper)
@@ -145,30 +145,30 @@ object GraphHelper {
     println(title)
     z.foreach(value => println(s"LAYER $value"))
     val builder = StringBuilder.newBuilder
-    (1 to gridProperties.xCount).foreach(_ => builder.append("+---"))
+    (1 to gridProperties.cols).foreach(_ => builder.append("+---"))
     val rowSeparator = "   " + builder.toString() + "+"
     builder.clear()
     builder.append("   ")
-    (1 to gridProperties.xCount).foreach(col => builder.append("  " + col + " "))
+    (1 to gridProperties.cols).foreach(col => builder.append("  " + col + " "))
     val colLabels = builder.toString()
     println(colLabels)
     for {
-      y <- 1 to gridProperties.yCount
+      row <- 1 to gridProperties.rows
     } yield {
       println(rowSeparator)
       builder.clear()
-      val row = gridProperties.yCount - y + 1
-      if (row < 10) builder.append(row + "  |") else builder.append(row + " |")
+      val r = gridProperties.rows - row + 1
+      if (r < 10) builder.append(r + "  |") else builder.append(r + " |")
       for {
-        col <- 1 to gridProperties.xCount
+        col <- 1 to gridProperties.cols
       } yield {
         val position = z match {
-          case Some(value) => Position(col, row, value)
-          case None => Position(col, row)
+          case Some(value) => Position(col, r, value)
+          case None => Position(col, r)
         }
         builder.append(" " + mapper(findEntities(position, g).headOption) + " |")
       }
-      builder.append(" " + row)
+      builder.append(" " + r)
       println(builder)
     }
     println(rowSeparator)
