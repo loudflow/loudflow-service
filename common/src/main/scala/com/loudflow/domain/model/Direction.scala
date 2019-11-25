@@ -15,7 +15,7 @@
 ************************************************************************ */
 package com.loudflow.domain.model
 
-import com.loudflow.util.Span
+import com.loudflow.util.DoubleSpan
 import play.api.libs.json._
 
 sealed trait Direction {
@@ -91,7 +91,7 @@ object Direction {
   val ordinal3D: Set[Direction] = Set(NorthEast, SouthEast, SouthWest, NorthWest, NorthEastAbove, SouthEastAbove, SouthWestAbove, NorthWestAbove, NorthEastBelow, SouthEastBelow, SouthWestBelow, NorthWestBelow)
   val compass3D: Set[Direction] = cardinal3D ++ ordinal3D
 
-  def stepInDirection(position: Position, direction: Direction, step: Double, xSpan: Option[Span[Double]] = None, ySpan: Option[Span[Double]] = None, zSpan: Option[Span[Double]] = None): Option[Position] = direction match {
+  def stepInDirection(position: Position, direction: Direction, step: Double, xSpan: Option[DoubleSpan] = None, ySpan: Option[DoubleSpan] = None, zSpan: Option[DoubleSpan] = None): Option[Position] = direction match {
     // 2D compass directions
     case North => forward(position.y, step, ySpan).map(Position(position.x, _, position.z))
     case NorthEast => forward(position.x, step, xSpan).flatMap(x => forward(position.y, step, ySpan).map(Position(x, _, position.z)))
@@ -122,11 +122,11 @@ object Direction {
     case WestBelow => backward(position.x, step, xSpan).flatMap(x => backward(position.z, step, zSpan).map(Position(x, position.y, _)))
     case NorthWestBelow => backward(position.x, step, xSpan).flatMap(x => forward(position.y, step, ySpan).flatMap(y => backward(position.z, step, zSpan).map(Position(x, y, _))))
   }
-  def forward(value: Double, step: Double, bounds: Option[Span[Double]]): Option[Double] = bounds match {
+  def forward(value: Double, step: Double, bounds: Option[DoubleSpan]): Option[Double] = bounds match {
     case Some(span) => if (value + step > span.max) None else Some(value + step)
     case None => Some(value + step)
   }
-  def backward(value: Double, step: Double, bounds: Option[Span[Double]]): Option[Double] = bounds match {
+  def backward(value: Double, step: Double, bounds: Option[DoubleSpan]): Option[Double] = bounds match {
     case Some(span) => if (value - step < span.min) None else Some(value - step)
     case None => Some(value - step)
   }

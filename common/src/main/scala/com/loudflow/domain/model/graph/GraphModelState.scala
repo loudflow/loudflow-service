@@ -150,7 +150,7 @@ object GraphModelState {
         state.entityProperties(e.kind) match {
           case Some(entityProperties) =>
             entityProperties.interactionProperties(target.kind)
-              .forall(interactionProperties => (interactionProperties.result != InteractionResult.ActorBlocked) && (allowMove || (interactionProperties.result != InteractionResult.TargetMoved)))
+              .forall(interactionProperties => (interactionProperties.result != InteractionResult.BLOCK_ACTOR) && (allowMove || (interactionProperties.result != InteractionResult.MOVE_TARGET)))
           case None => false
         }
       })

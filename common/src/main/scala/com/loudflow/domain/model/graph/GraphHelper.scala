@@ -21,7 +21,7 @@ import scalax.collection.mutable.{Graph => ScalaGraph}
 import cats.effect.IO
 import com.loudflow.domain.model._
 import com.loudflow.domain.model.entity.Entity
-import com.loudflow.util.Span
+import com.loudflow.util.DoubleSpan
 import org.slf4j.{Logger, LoggerFactory}
 
 object GraphHelper {
@@ -67,13 +67,13 @@ object GraphHelper {
 
   def buildPositionLayer(gridProperties: GridProperties): Graph = {
     val g = emptyGraph
-    val rowSpan = Span(1, gridProperties.rows.toDouble)
-    val colSpan = Span(1, gridProperties.cols.toDouble)
+    val rowSpan = DoubleSpan(1, gridProperties.rows.toDouble)
+    val colSpan = DoubleSpan(1, gridProperties.cols.toDouble)
     if (gridProperties.layers > 0) build3DPositionLayer(gridProperties, rowSpan, colSpan, g)
     else build2DPositionLayer(gridProperties, rowSpan, colSpan, g)
   }
 
-  private def build2DPositionLayer(gridProperties: GridProperties, rowSpan: Span[Double], colSpan: Span[Double], g: Graph): Graph = {
+  private def build2DPositionLayer(gridProperties: GridProperties, rowSpan: DoubleSpan, colSpan: DoubleSpan, g: Graph): Graph = {
     val positions = for {
       row <- 1 to gridProperties.rows
       col <- 1 to gridProperties.cols
@@ -96,8 +96,8 @@ object GraphHelper {
     g
   }
 
-  private def build3DPositionLayer(gridProperties: GridProperties, rowSpan: Span[Double], colSpan: Span[Double], g: Graph): Graph = {
-    val layerSpan = Span(1, gridProperties.layers.toDouble)
+  private def build3DPositionLayer(gridProperties: GridProperties, rowSpan: DoubleSpan, colSpan: DoubleSpan, g: Graph): Graph = {
+    val layerSpan = DoubleSpan(1, gridProperties.layers.toDouble)
     val positions = for {
       row <- 1 to gridProperties.rows
       col <- 1 to gridProperties.cols

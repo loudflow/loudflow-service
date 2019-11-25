@@ -15,7 +15,7 @@
 ************************************************************************ */
 package com.loudflow.domain.model
 
-import com.loudflow.util.Span
+import com.loudflow.util.DoubleSpan
 import org.scalatest.{BeforeAndAfter, FunSuite}
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -30,7 +30,7 @@ class DirectionTest extends FunSuite with BeforeAndAfter {
     assert(p.get.x == 0.0 && p.get.y == 1.0)
   }
   test("step in direction: North, step:2, span:(0,1)") {
-    val p = Direction.stepInDirection(origin, Direction.North, 2, Some(Span(0, 1.0)), Some(Span(0, 1.0)))
+    val p = Direction.stepInDirection(origin, Direction.North, 2, Some(DoubleSpan(0, 1.0)), Some(DoubleSpan(0, 1.0)))
     assert(p.isEmpty)
   }
   test("step in direction: NorthWest, step:1") {

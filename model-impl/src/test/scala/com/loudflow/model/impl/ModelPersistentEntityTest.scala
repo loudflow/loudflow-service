@@ -17,7 +17,6 @@ package com.loudflow.model.impl
 
 import java.util.UUID
 
-import akka.Done
 import akka.actor.ActorSystem
 import akka.testkit.TestKit
 import com.lightbend.lagom.scaladsl.testkit.PersistentEntityTestDriver
@@ -25,7 +24,7 @@ import com.lightbend.lagom.scaladsl.playjson.JsonSerializerRegistry
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 import org.slf4j.{Logger, LoggerFactory}
 import com.loudflow.domain.model.{GraphProperties, GridProperties, ModelProperties, ModelType}
-import com.loudflow.model.api.ReadModelResponse
+import com.loudflow.model.impl.ModelCommand.{CommandReply, ReadReply}
 
 class ModelPersistentEntityTest extends WordSpecLike with Matchers with BeforeAndAfterAll {
 
@@ -36,7 +35,7 @@ class ModelPersistentEntityTest extends WordSpecLike with Matchers with BeforeAn
   private val traceId = UUID.randomUUID.toString
   private val gridProperties = GridProperties(10, 10)
   private val graphProperties = GraphProperties(Some(gridProperties))
-  private val modelProperties = ModelProperties(ModelType.Graph, Some(graphProperties))
+  private val modelProperties = ModelProperties(ModelType.GRAPH, Some(graphProperties))
 
   override protected def afterAll(): Unit = {
     TestKit.shutdownActorSystem(system)
@@ -49,7 +48,7 @@ class ModelPersistentEntityTest extends WordSpecLike with Matchers with BeforeAn
       val driver = new PersistentEntityTestDriver(system, new ModelPersistentEntity(), id)
       val created = driver.run(CreateModel(traceId, modelProperties))
       log.debug(s"CREATED: ${created.replies}")
-      created.replies should be(Seq(Done))
+      created.replies should be(Seq(CommandReply(id, traceId, "CreateModel")))
     }
 
     "handle DestroyModel command" in {
@@ -57,10 +56,10 @@ class ModelPersistentEntityTest extends WordSpecLike with Matchers with BeforeAn
       val driver = new PersistentEntityTestDriver(system, new ModelPersistentEntity(), id)
       val created = driver.run(CreateModel(traceId, modelProperties))
       log.debug(s"CREATED: ${created.replies}")
-      created.replies should be(Seq(Done))
+      created.replies should be(Seq(CommandReply(id, traceId, "CreateModel")))
       val destroyed = driver.run(DestroyModel(traceId))
       log.debug(s"DESTROYED: ${destroyed.replies}")
-      destroyed.replies should be(Seq(Done))
+      destroyed.replies should be(Seq(CommandReply(id, traceId, "DestroyModel")))
     }
 
     "handle ReadModel command" in {
@@ -68,10 +67,10 @@ class ModelPersistentEntityTest extends WordSpecLike with Matchers with BeforeAn
       val driver = new PersistentEntityTestDriver(system, new ModelPersistentEntity(), id)
       val created = driver.run(CreateModel(traceId, modelProperties))
       log.debug(s"CREATED: ${created.replies}")
-      created.replies should be(Seq(Done))
+      created.replies should be(Seq(CommandReply(id, traceId, "CreateModel")))
       val read = driver.run(ReadModel(traceId))
       log.debug(s"READ: ${read.replies}")
-      read.replies.head shouldBe a [ReadModelResponse]
+      read.replies.head shouldBe a [ReadReply]
     }
 
     "handle AddEntity command" in {
@@ -79,10 +78,10 @@ class ModelPersistentEntityTest extends WordSpecLike with Matchers with BeforeAn
       val driver = new PersistentEntityTestDriver(system, new ModelPersistentEntity(), id)
       val created = driver.run(CreateModel(traceId, modelProperties))
       log.debug(s"CREATED: ${created.replies}")
-      created.replies should be(Seq(Done))
+      created.replies should be(Seq(CommandReply(id, traceId, "CreateModel")))
       val added = driver.run(AddEntity(traceId, "agent::random"))
       log.debug(s"ADDED: ${added.replies}")
-      added.replies should be(Seq(Done))
+      added.replies should be(Seq(CommandReply(id, traceId, "AddEntity")))
     }
 
     "handle MoveEntity command" in {
@@ -90,10 +89,10 @@ class ModelPersistentEntityTest extends WordSpecLike with Matchers with BeforeAn
       val driver = new PersistentEntityTestDriver(system, new ModelPersistentEntity(), id)
       val created = driver.run(CreateModel(traceId, modelProperties))
       log.debug(s"CREATED: ${created.replies}")
-      created.replies should be(Seq(Done))
+      created.replies should be(Seq(CommandReply(id, traceId, "CreateModel")))
       val moved = driver.run(MoveEntity(traceId, UUID.randomUUID().toString))
       log.debug(s"MOVED: ${moved.replies}")
-      moved.replies should be(Seq(Done))
+      moved.replies should be(Seq(CommandReply(id, traceId, "MoveEntity")))
     }
 
     "handle RemoveEntity command" in {
@@ -101,10 +100,10 @@ class ModelPersistentEntityTest extends WordSpecLike with Matchers with BeforeAn
       val driver = new PersistentEntityTestDriver(system, new ModelPersistentEntity(), id)
       val created = driver.run(CreateModel(traceId, modelProperties))
       log.debug(s"CREATED: ${created.replies}")
-      created.replies should be(Seq(Done))
+      created.replies should be(Seq(CommandReply(id, traceId, "CreateModel")))
       val removed = driver.run(RemoveEntity(traceId, UUID.randomUUID().toString))
       log.debug(s"REMOVED: ${removed.replies}")
-      removed.replies should be(Seq(Done))
+      removed.replies should be(Seq(CommandReply(id, traceId, "RemoveEntity")))
     }
 
     "handle PickEntity command" in {
@@ -112,7 +111,7 @@ class ModelPersistentEntityTest extends WordSpecLike with Matchers with BeforeAn
       val driver = new PersistentEntityTestDriver(system, new ModelPersistentEntity(), id)
       val created = driver.run(CreateModel(traceId, modelProperties))
       log.debug(s"CREATED: ${created.replies}")
-      created.replies should be(Seq(Done))
+      created.replies should be(Seq(CommandReply(id, traceId, "CreateModel")))
       val removed = driver.run(PickEntity(traceId, UUID.randomUUID().toString, UUID.randomUUID().toString))
       log.debug(s"PICKED: ${removed.replies}")
       removed.replies.head shouldBe a [IllegalStateException]
@@ -123,7 +122,7 @@ class ModelPersistentEntityTest extends WordSpecLike with Matchers with BeforeAn
       val driver = new PersistentEntityTestDriver(system, new ModelPersistentEntity(), id)
       val created = driver.run(CreateModel(traceId, modelProperties))
       log.debug(s"CREATED: ${created.replies}")
-      created.replies should be(Seq(Done))
+      created.replies should be(Seq(CommandReply(id, traceId, "CreateModel")))
       val removed = driver.run(DropEntity(traceId, UUID.randomUUID().toString, UUID.randomUUID().toString))
       log.debug(s"DROPPED: ${removed.replies}")
       removed.replies.head shouldBe a [IllegalStateException]

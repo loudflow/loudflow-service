@@ -16,7 +16,7 @@
 package com.loudflow.domain.model.entity
 
 import com.loudflow.domain.model.Position
-import com.loudflow.util.Span
+import com.loudflow.util.IntSpan
 import play.api.libs.json._
 
 final case class EntityProperties
@@ -36,46 +36,20 @@ final case class EntityProperties
 }
 object EntityProperties { implicit val format: Format[EntityProperties] = Json.format }
 
-object EntityCategory {
-
-  sealed trait Value
-
-  final object Agent extends Value {
-    val demuxer = "agent"
-  }
-
-  final object Thing extends Value {
-    val demuxer = "thing"
-  }
-
-  val values: Set[Value] = Set(Agent, Thing)
-
-  def fromString(value: String): Option[Value] = value.toLowerCase match {
-    case "agent" => Some(Agent)
-    case "thing" => Some(Thing)
-    case _ => None
-  }
-
-  implicit val reads: Reads[Value] = Reads { json =>
-    (JsPath \ "demuxer").read[String].reads(json).flatMap {
-      case "agent" => JsSuccess(Agent)
-      case "thing" => JsSuccess(Thing)
-      case other => JsError(s"Read Entity.Type failed due to unknown enumeration value $other.")
-    }
-  }
-  implicit val writes: Writes[Value] = Writes {
-    case Agent => JsObject(Seq("demuxer" -> JsString("agent")))
-    case Thing => JsObject(Seq("demuxer" -> JsString("thing")))
-  }
+object EntityCategory extends Enumeration {
+  type EntityCategory = Value
+  val AGENT: EntityCategory.Value = Value
+  val THING: EntityCategory.Value = Value
+  implicit val format: Format[EntityCategory.Value] = Json.formatEnum(this)
 }
 
-final case class PopulationProperties(range: Span[Int], growth: Option[Int], lifeSpanRange: Option[Span[Int]]) {
+final case class PopulationProperties(range: IntSpan, growth: Option[Int], lifeSpanRange: Option[IntSpan]) {
   require(growth.isDefined && growth.get >= 0, "Invalid argument 'growth' for PopulationProperties..")
   require(lifeSpanRange.isDefined && lifeSpanRange.get.min > 0, "Invalid argument 'lifeSpanRange' for PopulationProperties..")
 }
 object PopulationProperties { implicit val format: Format[PopulationProperties] = Json.format }
 
-final case class ClusterProperties(size: Span[Int] = Span(0, 0), step: Int = 0, locations: Array[Position] = Array.empty, is3D: Boolean = false, autoGenerate: Boolean = true) {
+final case class ClusterProperties(size: IntSpan = IntSpan(0, 0), step: Int = 0, locations: Array[Position] = Array.empty, is3D: Boolean = false, autoGenerate: Boolean = true) {
   require(autoGenerate && size.min > 0, "Invalid argument 'size.min' for ClusterProperties. For auto-generated clusters, minimum size must be greater than zero.")
   require(autoGenerate && step > 0, "Invalid argument 'step' for ClusterProperties. For auto-generated clusters, step must be greater than zero.")
   require(!autoGenerate && locations.nonEmpty, "Invalid argument 'locations' for ClusterProperties. For pre-defined clusters, locations cannot be empty.")
@@ -92,54 +66,19 @@ final case class ProximityProperties(kind: String, distance: Int) {
 }
 object ProximityProperties { implicit val format: Format[ProximityProperties] = Json.format }
 
-final case class InteractionProperties(target: Participant, trigger: Option[Participant], result: InteractionResult.Value = InteractionResult.ActorBlocked, score: Option[Int] = None, scoreDecayRate: Option[Int] = None)
+final case class InteractionProperties(target: Participant, trigger: Option[Participant], result: InteractionResult.Value = InteractionResult.BLOCK_ACTOR, score: Option[Int] = None, scoreDecayRate: Option[Int] = None)
 object InteractionProperties { implicit val format: Format[InteractionProperties] = Json.format }
 
 final case class Participant(kind: String, score: Option[Int], scoreDecayRate: Option[Int])
 object Participant { implicit val format: Format[Participant] = Json.format }
 
-object InteractionResult {
-
-  sealed trait Value
-  final case object Share extends Value {
-    val valueType = "share"
-  }
-  final case object ActorBlocked extends Value {
-    val valueType = "actor-blocked"
-  }
-  final case object TargetMoved extends Value {
-    val valueType = "target-moved"
-  }
-  final case object ActorRemoved extends Value {
-    val valueType = "actor-removed"
-  }
-  final case object TargetRemoved extends Value {
-    val valueType = "target-removed"
-  }
-  final case object BothRemoved extends Value {
-    val valueType = "both-removed"
-  }
-
-  val values: Seq[Value] = Seq(Share, ActorBlocked, TargetMoved, ActorRemoved, TargetRemoved, BothRemoved)
-
-  implicit val reads: Reads[Value] = Reads { json =>
-    (JsPath \ "valueType").read[String].reads(json).flatMap {
-      case "share" => JsSuccess(Share)
-      case "actor-blocked" => JsSuccess(ActorBlocked)
-      case "target-moved" => JsSuccess(TargetMoved)
-      case "actor-removed" => JsSuccess(ActorRemoved)
-      case "target-removed" => JsSuccess(TargetRemoved)
-      case "both-removed" => JsSuccess(BothRemoved)
-      case other => JsError(s"Read ConcurrenceOutcome failed due to unknown enumeration value $other.")
-    }
-  }
-  implicit val writes: Writes[Value] = Writes {
-    case Share => JsObject(Seq("valueType" -> JsString("share")))
-    case ActorBlocked => JsObject(Seq("valueType" -> JsString("actor-blocked")))
-    case TargetMoved => JsObject(Seq("valueType" -> JsString("target-moved")))
-    case ActorRemoved => JsObject(Seq("valueType" -> JsString("actor-removed")))
-    case TargetRemoved => JsObject(Seq("valueType" -> JsString("target-removed")))
-    case BothRemoved => JsObject(Seq("valueType" -> JsString("both-removed")))
-  }
-
+object InteractionResult extends Enumeration {
+  type InteractionResult = Value
+  val SHARE: InteractionResult.Value = Value
+  val BLOCK_ACTOR: InteractionResult.Value = Value
+  val MOVE_TARGET: InteractionResult.Value = Value
+  val REMOVE_ACTOR: InteractionResult.Value = Value
+  val REMOVE_TARGET: InteractionResult.Value = Value
+  val REMOVE_BOTH: InteractionResult.Value = Value
+  implicit val format: Format[InteractionResult.Value] = Json.formatEnum(this)
 }

@@ -13,10 +13,9 @@
    file 'LICENSE.txt', which is part of this source code package.
 
 ************************************************************************ */
-package com.loudflow.model.api
+package com.loudflow.api
 
-import play.api.libs.json.{Format, Json}
-import com.loudflow.domain.model.ModelState
+import play.api.libs.json.{Format, JsObject, JsValue, Json}
 
-final case class ReadModelResponse(id: String, state: ModelState)
-object ReadModelResponse { implicit val format: Format[ReadModelResponse] = Json.format }
+final case class GraphQLRequest(query: String, operationName: Option[String] = None, variables: Option[String] = None)
+object GraphQLRequest { implicit val format: Format[GraphQLRequest] = Json.format }

@@ -59,7 +59,7 @@ class SimulationPersistentEntityTest(implicit ec: ExecutionContext) extends Word
       val traceId = UUID.randomUUID.toString
       val gridProperties = GridProperties(10, 10)
       val graphProperties = GraphProperties(Some(gridProperties))
-      val modelProperties = ModelProperties(ModelType.Graph, Some(graphProperties))
+      val modelProperties = ModelProperties(ModelType.GRAPH, Some(graphProperties))
       val simulationProperties = SimulationProperties()
       val outcome = driver.run(CreateSimulation(traceId, simulationProperties, modelProperties))
       outcome.replies should ===(Done)

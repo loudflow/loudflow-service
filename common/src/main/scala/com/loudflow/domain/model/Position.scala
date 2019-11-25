@@ -17,7 +17,7 @@ package com.loudflow.domain.model
 
 import play.api.libs.json._
 import com.loudflow.domain.model.graph.GraphHelper.Node
-import com.loudflow.util.Span
+import com.loudflow.util.DoubleSpan
 
 final case class Position(x: Double, y: Double, z: Double = 0.0) extends Node {
   val margin = 0.001
@@ -36,5 +36,5 @@ final case class Position(x: Double, y: Double, z: Double = 0.0) extends Node {
 }
 object Position {
   implicit val format: Format[Position] = Json.format
-  final case class Boundaries(x: Span[Double], y: Span[Double], z: Option[Span[Double]] = None)
+  final case class Boundaries(x: DoubleSpan, y: DoubleSpan, z: Option[DoubleSpan] = None)
 }

@@ -24,7 +24,7 @@ import com.lightbend.lagom.scaladsl.devmode.LagomDevModeComponents
 import com.lightbend.lagom.scaladsl.broker.kafka.LagomKafkaComponents
 import com.lightbend.lagom.scaladsl.playjson.JsonSerializerRegistry
 import com.softwaremill.macwire._
-import com.loudflow.exception.CustomExceptionSerializer
+import com.loudflow.exception.ServiceExceptionSerializer
 import com.loudflow.model.api.ModelService
 import com.loudflow.simulation.api.SimulationService
 
@@ -42,7 +42,7 @@ abstract class ModelApplication(context: LagomApplicationContext) extends LagomA
 
   override lazy val lagomServer: LagomServer = serverFor[ModelService](wire[ModelServiceImpl])
   override lazy val jsonSerializerRegistry: JsonSerializerRegistry = ModelSerializerRegistry
-  override lazy val defaultExceptionSerializer = new CustomExceptionSerializer(environment)
+  override lazy val defaultExceptionSerializer = new ServiceExceptionSerializer(environment)
 
   lazy val simulationService: SimulationService = serviceClient.implement[SimulationService]
 

@@ -15,13 +15,12 @@
 ************************************************************************ */
 package com.loudflow.model.impl
 
-import akka.Done
 import play.api.libs.json._
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntity
 import com.loudflow.domain.Message
 import com.loudflow.domain.model._
 import com.loudflow.domain.model.entity.EntityOptions
-import com.loudflow.model.api.ReadModelResponse
+import com.loudflow.model.impl.ModelCommand.{CommandReply, ReadReply}
 
 sealed trait ModelCommand extends Message {
   def demuxer: String
@@ -31,17 +30,17 @@ sealed trait ModelCommand extends Message {
    CRUD Commands
 ************************************************************************ */
 
-final case class CreateModel(traceId: String, properties: ModelProperties) extends ModelCommand with PersistentEntity.ReplyType[Done] {
+final case class CreateModel(traceId: String, properties: ModelProperties) extends ModelCommand with PersistentEntity.ReplyType[CommandReply] {
   val demuxer = "create-model"
 }
 object CreateModel { implicit val format: Format[CreateModel] = Json.format }
 
-final case class DestroyModel(traceId: String) extends ModelCommand with PersistentEntity.ReplyType[Done] {
+final case class DestroyModel(traceId: String) extends ModelCommand with PersistentEntity.ReplyType[CommandReply] {
   val demuxer = "destroy-model"
 }
 object DestroyModel { implicit val format: Format[DestroyModel] = Json.format }
 
-final case class ReadModel(traceId: String) extends ModelCommand with PersistentEntity.ReplyType[ReadModelResponse] {
+final case class ReadModel(traceId: String) extends ModelCommand with PersistentEntity.ReplyType[ReadReply] {
   val demuxer = "read-model"
 }
 object ReadModel { implicit val format: Format[ReadModel] = Json.format }
@@ -50,27 +49,27 @@ object ReadModel { implicit val format: Format[ReadModel] = Json.format }
    Action Commands
 ************************************************************************ */
 
-final case class AddEntity(traceId: String, kind: String, options: Option[EntityOptions] = None, position: Option[Position] = None) extends ModelCommand with PersistentEntity.ReplyType[Done] {
+final case class AddEntity(traceId: String, kind: String, options: Option[EntityOptions] = None, position: Option[Position] = None) extends ModelCommand with PersistentEntity.ReplyType[CommandReply] {
   val demuxer = "add-entity"
 }
 object AddEntity { implicit val format: Format[AddEntity] = Json.format }
 
-final case class RemoveEntity(traceId: String, entityId: String) extends ModelCommand with PersistentEntity.ReplyType[Done] {
+final case class RemoveEntity(traceId: String, entityId: String) extends ModelCommand with PersistentEntity.ReplyType[CommandReply] {
   val demuxer = "remove-entity"
 }
 object RemoveEntity { implicit val format: Format[RemoveEntity] = Json.format }
 
-final case class MoveEntity(traceId: String, entityId: String, position: Option[Position] = None) extends ModelCommand with PersistentEntity.ReplyType[Done] {
+final case class MoveEntity(traceId: String, entityId: String, position: Option[Position] = None) extends ModelCommand with PersistentEntity.ReplyType[CommandReply] {
   val demuxer = "move-entity"
 }
 object MoveEntity { implicit val format: Format[MoveEntity] = Json.format }
 
-final case class PickEntity(traceId: String, entityId: String, targetId: String) extends ModelCommand with PersistentEntity.ReplyType[Done] {
+final case class PickEntity(traceId: String, entityId: String, targetId: String) extends ModelCommand with PersistentEntity.ReplyType[CommandReply] {
   val demuxer = "pick-entity"
 }
 object PickEntity { implicit val format: Format[PickEntity] = Json.format }
 
-final case class DropEntity(traceId: String, entityId: String, targetId: String) extends ModelCommand with PersistentEntity.ReplyType[Done] {
+final case class DropEntity(traceId: String, entityId: String, targetId: String) extends ModelCommand with PersistentEntity.ReplyType[CommandReply] {
   val demuxer = "drop-entity"
 }
 object DropEntity { implicit val format: Format[DropEntity] = Json.format }
@@ -80,6 +79,7 @@ object DropEntity { implicit val format: Format[DropEntity] = Json.format }
 ************************************************************************ */
 
 object ModelCommand {
+
   implicit val reads: Reads[ModelCommand] = {
     (JsPath \ "demuxer").read[String].flatMap {
       case "create-model" => implicitly[Reads[CreateModel]].map(identity)
@@ -93,6 +93,7 @@ object ModelCommand {
       case other => Reads(_ => JsError(s"Read ModelCommand failed due to unknown type $other."))
     }
   }
+
   implicit val writes: Writes[ModelCommand] = Writes { obj =>
     val (jsValue, demuxer) = obj match {
       case command: CreateModel   => (Json.toJson(command)(CreateModel.format), "create-model")
@@ -106,7 +107,8 @@ object ModelCommand {
     }
     jsValue.transform(JsPath.json.update((JsPath \ 'demuxer).json.put(JsString(demuxer)))).get
   }
-  def fromAction(action: ModelAction): Seq[ModelCommand with PersistentEntity.ReplyType[Done]] = action match {
+
+  def fromAction(action: ModelAction): Seq[ModelCommand with PersistentEntity.ReplyType[CommandReply]] = action match {
     case CreateModelAction(_, traceId, properties) => Seq(CreateModel(traceId, properties))
     case DestroyModelAction(_, traceId) => Seq(DestroyModel(traceId))
     case AddEntityAction(_, traceId, kind, options, position) => Seq(AddEntity(traceId, kind, options, position))
@@ -116,4 +118,11 @@ object ModelCommand {
     case DropEntityAction(_, traceId, entityId, targetId) => Seq(DropEntity(traceId, entityId, targetId))
     case BatchAction(_, _, actions) => actions.flatMap(fromAction)
   }
+
+  final case class CommandReply(id: String, traceId: String, command: String)
+  object CommandReply { implicit val format: Format[CommandReply] = Json.format }
+
+  final case class ReadReply(id: String, traceId: String, state: ModelState)
+  object ReadReply { implicit val format: Format[ReadReply] = Json.format }
+
 }

@@ -14,30 +14,25 @@ val scalaTest = "org.scalatest" %% "scalatest" % "3.0.8" % "test"
 val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
 val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
 val sangria = "org.sangria-graphql" %% "sangria" % "1.4.2"
+val sangriaPlayJson = "org.sangria-graphql" %% "sangria-play-json" % "1.0.5"
+
+lazy val commonDependencies = Seq(macwire, cats, catsEffect, sangria, sangriaPlayJson, scalaGraph, scalaGraphJson, scalaTest, scalaLogging, logback)
 
 lazy val `loudflow-service` = (project in file("."))
   .aggregate(`common`, `agent-api`, `agent-impl`, `model-api`, `model-impl`, `simulation-api`, `simulation-impl`)
 
 lazy val `common` = (project in file("common"))
   .settings(
-    libraryDependencies ++= Seq(
+    libraryDependencies ++= commonDependencies ++ Seq(
       lagomScaladslApi,
-      lagomScaladslPersistenceCassandra,
-      scalaGraph,
-      scalaGraphJson,
-      cats,
-      catsEffect,
-      scalaTest,
-      scalaLogging,
-      logback
+      lagomScaladslPersistenceCassandra
     )
   )
 
 lazy val `agent-api` = (project in file("agent-api"))
   .settings(
-    libraryDependencies ++= Seq(
-      lagomScaladslApi,
-      logback
+    libraryDependencies ++= commonDependencies ++ Seq(
+      lagomScaladslApi
     )
   )
   .dependsOn(`common`)
@@ -45,15 +40,10 @@ lazy val `agent-api` = (project in file("agent-api"))
 lazy val `agent-impl` = (project in file("agent-impl"))
   .enablePlugins(LagomScala)
   .settings(
-    libraryDependencies ++= Seq(
+    libraryDependencies ++= commonDependencies ++ Seq(
       lagomScaladslPersistenceCassandra,
       lagomScaladslKafkaBroker,
-      lagomScaladslTestKit,
-      macwire,
-      cats,
-      scalaTest,
-      scalaLogging,
-      logback
+      lagomScaladslTestKit
     )
   )
   .settings(lagomForkedTestSettings)
@@ -61,11 +51,8 @@ lazy val `agent-impl` = (project in file("agent-impl"))
 
 lazy val `model-api` = (project in file("model-api"))
   .settings(
-    libraryDependencies ++= Seq(
-      lagomScaladslApi,
-      scalaLogging,
-      logback,
-      sangria
+    libraryDependencies ++= commonDependencies ++ Seq(
+      lagomScaladslApi
     )
   )
   .dependsOn(`common`)
@@ -73,15 +60,10 @@ lazy val `model-api` = (project in file("model-api"))
 lazy val `model-impl` = (project in file("model-impl"))
   .enablePlugins(LagomScala)
   .settings(
-    libraryDependencies ++= Seq(
+    libraryDependencies ++= commonDependencies ++ Seq(
       lagomScaladslPersistenceCassandra,
       lagomScaladslKafkaBroker,
-      lagomScaladslTestKit,
-      macwire,
-      cats,
-      scalaTest,
-      scalaLogging,
-      logback
+      lagomScaladslTestKit
     )
   )
   .settings(lagomForkedTestSettings: _*)
@@ -89,10 +71,8 @@ lazy val `model-impl` = (project in file("model-impl"))
 
 lazy val `simulation-api` = (project in file("simulation-api"))
   .settings(
-    libraryDependencies ++= Seq(
-      lagomScaladslApi,
-      scalaLogging,
-      logback
+    libraryDependencies ++= commonDependencies ++ Seq(
+      lagomScaladslApi
     )
   )
   .dependsOn(`common`)
@@ -100,15 +80,10 @@ lazy val `simulation-api` = (project in file("simulation-api"))
 lazy val `simulation-impl` = (project in file("simulation-impl"))
   .enablePlugins(LagomScala)
   .settings(
-    libraryDependencies ++= Seq(
+    libraryDependencies ++= commonDependencies ++ Seq(
       lagomScaladslPersistenceCassandra,
       lagomScaladslKafkaBroker,
-      lagomScaladslTestKit,
-      macwire,
-      cats,
-      scalaTest,
-      scalaLogging,
-      logback
+      lagomScaladslTestKit
     )
   )
   .settings(lagomForkedTestSettings)
