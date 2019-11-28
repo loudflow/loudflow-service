@@ -27,15 +27,14 @@ import com.lightbend.lagom.scaladsl.api.transport.{ResponseHeader, TransportErro
 import com.lightbend.lagom.scaladsl.broker.TopicProducer
 import com.lightbend.lagom.scaladsl.persistence.{EventStreamElement, PersistentEntityRef, PersistentEntityRegistry}
 import com.lightbend.lagom.scaladsl.server.ServerServiceCall
-import com.loudflow.api.{CommandResponse, GraphQLRequest, HealthResponse}
+import com.loudflow.api.{GraphQLRequest, HealthResponse}
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import com.loudflow.model.api.{CreateModelRequest, ModelService}
-import com.loudflow.model.impl.ModelCommand.ReadReply
+import com.loudflow.model.api.ModelService
 import com.loudflow.simulation.api.SimulationService
 import play.api.libs.json.{Format, JsObject, JsValue, Json}
 import sangria.execution.{ErrorWithResolver, Executor, QueryAnalysisError}
-import sangria.parser.{Document, QueryParser}
+import sangria.parser.QueryParser
 import sangria.schema._
 import sangria.marshalling.playJson._
 
@@ -61,17 +60,11 @@ class ModelServiceImpl(simulationService: SimulationService, persistentEntityReg
     Future.successful(HealthResponse("model"))
   }
 
-  override def checkModelHealth(id: String) = ServiceCall { _ =>
-    Future.successful(HealthResponse("model", Some(id.toString)))
-  }
-
   val modelQueries: List[Field[ModelServiceImpl.Context, Unit]] = List(
     Field(
       name = "read",
       fieldType = ModelSchema.ReadReplyType,
-      arguments = List(
-        Argument("id", StringType)
-      ),
+      arguments = Argument("id", StringType) :: Nil,
       resolve = graphqlCtx => {
         val serviceCtx = graphqlCtx.ctx
         val id = graphqlCtx.args.arg[String]("id")
@@ -85,9 +78,7 @@ class ModelServiceImpl(simulationService: SimulationService, persistentEntityReg
     Field(
       name = "create",
       fieldType = ModelSchema.CommandReplyType,
-      arguments = List(
-        Argument("properties", ModelSchema.ModelPropertiesInputType)
-      ),
+      arguments = Argument("properties", ModelSchema.ModelPropertiesInputType) :: Nil,
       resolve = graphqlCtx => {
         val serviceCtx = graphqlCtx.ctx
         val properties = graphqlCtx.args.arg[ModelProperties]("properties")
@@ -99,9 +90,7 @@ class ModelServiceImpl(simulationService: SimulationService, persistentEntityReg
     Field(
       name = "destroy",
       fieldType = ModelSchema.CommandReplyType,
-      arguments = List(
-        Argument("id", StringType)
-      ),
+      arguments = Argument("id", StringType) :: Nil,
       resolve = graphqlCtx => {
         val serviceCtx = graphqlCtx.ctx
         val id = graphqlCtx.args.arg[String]("id")
@@ -113,7 +102,8 @@ class ModelServiceImpl(simulationService: SimulationService, persistentEntityReg
 
   val modelSchema = Schema(
     query = ObjectType("Query", fields(modelQueries: _*)),
-    mutation = Some(ObjectType("Mutation", fields(modelMutations: _*)))
+    mutation = Some(ObjectType("Mutation", fields(modelMutations: _*))),
+    additionalTypes = ModelSchema.GraphModelStateType :: Nil
   )
 
   override def getGraphQLQuery(query: String, operationName: Option[String], variables: Option[String]): ServiceCall[NotUsed, JsValue] = trace { traceId =>
@@ -146,13 +136,16 @@ class ModelServiceImpl(simulationService: SimulationService, persistentEntityReg
         )
         .map(result => (ResponseHeader.Ok, result))
         .recover {
-          case error: QueryAnalysisError => (ResponseHeader.Ok.withStatus(400), error.resolveError)
-          case error: ErrorWithResolver => (ResponseHeader.Ok.withStatus(500), error.resolveError)
+          case error: QueryAnalysisError =>
+            log.error(s"GRAPHQL QUERY ANALYSIS ERROR: $error")
+            (ResponseHeader.Ok.withStatus(400), error.resolveError)
+          case error: ErrorWithResolver =>
+            log.error(s"GRAPHQL EXECUTION ERROR: $error")
+            (ResponseHeader.Ok.withStatus(500), error.resolveError)
         }
       case Failure(exception) =>
+        log.error(s"GRAPHQL QUERY PARSER EXCEPTION: $exception")
         throw new TransportException(TransportErrorCode.BadRequest, s"${exception.getMessage}")
-        // val e = new InternalExecutionError(s"${exception.getMessage}")
-        // Future((ResponseHeader.Ok.withStatus(400), e.resolveError))
     }
   }
 
@@ -162,44 +155,11 @@ class ModelServiceImpl(simulationService: SimulationService, persistentEntityReg
       case None => Json.obj()
     }
 
-/*
-  override def createModel: ServiceCall[CreateModelRequest, CommandResponse] = trace { traceId =>
-    ServerServiceCall { request =>
-      val id = UUID.randomUUID.toString
-      log.trace(s"[$traceId] Request body: $request")
-      val command = CreateModel(traceId, request.model)
-      persistentEntity(id).ask(command).map(_ => accepted(id, command))
-    }
-  }
-
-  override def destroyModel(id: String): ServiceCall[NotUsed, CommandResponse] = trace { traceId =>
-    ServerServiceCall { _ =>
-      val command = DestroyModel(traceId)
-      persistentEntity(id).ask(command).map(_ => accepted(id, command))
-    }
-  }
-
-  override def readModel(id: String): ServiceCall[NotUsed, ReadReply] = trace { traceId =>
-    ServerServiceCall { _ => {
-      val command = ReadModel(traceId)
-      persistentEntity(id).ask(command)
-    }}
-  }
-*/
-
   def trace[Request, Response](serviceCall: String => ServerServiceCall[Request, Response]): ServerServiceCall[Request, Response] = ServerServiceCall.compose(header => {
     val traceId = UUID.randomUUID.toString
     log.trace(s"[$traceId] ModelService received request ${header.method} ${header.uri}")
     serviceCall(traceId)
   })
-
-/*
-  def accepted(id: String, command: ModelCommand): CommandResponse = {
-    val commandName = command.getClass.getSimpleName
-    log.trace(s"[${command.traceId}] ModelService accepted command [$commandName]")
-    CommandResponse("model", id, commandName)
-  }
-*/
 
   override def changeTopic: Topic[ModelChange] =
     TopicProducer.taggedStreamWithOffset(ModelEvent.Tag.allTags.toList) {

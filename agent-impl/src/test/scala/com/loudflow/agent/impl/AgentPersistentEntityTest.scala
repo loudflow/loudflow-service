@@ -55,7 +55,7 @@ class AgentPersistentEntityTest(implicit ec: ExecutionContext) extends WordSpec 
       val traceId = UUID.randomUUID.toString
       val gridProperties = GridProperties(10, 10)
       val graphProperties = GraphProperties(Some(gridProperties))
-      val modelProperties = ModelProperties(ModelType.Graph, Some(graphProperties))
+      val modelProperties = ModelProperties(ModelType.GRAPH, Some(graphProperties))
       val agentProperties = AgentProperties(AgentType.Random)
       val outcome = driver.run(CreateAgent(traceId, agentProperties, modelProperties))
       outcome.replies should ===(Done)

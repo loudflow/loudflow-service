@@ -25,11 +25,11 @@ import org.scalatest.{AsyncWordSpec, BeforeAndAfterAll, Matchers}
 import com.lightbend.lagom.scaladsl.server.LocalServiceLocator
 import com.lightbend.lagom.scaladsl.testkit.{ServiceTest, TestTopicComponents}
 import com.loudflow.api.{GraphQLRequest, HealthResponse}
-import com.loudflow.domain.model.{GraphProperties, GridProperties, ModelAction, ModelChange, ModelProperties, ModelType}
+import com.loudflow.domain.model.{GraphProperties, GridProperties, ModelAction, ModelChange, ModelProperties, ModelState, ModelType}
 import com.loudflow.model.api.{CreateModelRequest, ModelService}
 import com.loudflow.simulation.api.SimulationService
 import org.slf4j.{Logger, LoggerFactory}
-import play.api.libs.json.Json
+import play.api.libs.json.{JsPath, Json, Writes}
 
 class ModelServiceImplTest extends AsyncWordSpec with Matchers with BeforeAndAfterAll {
 
@@ -41,72 +41,84 @@ class ModelServiceImplTest extends AsyncWordSpec with Matchers with BeforeAndAft
   implicit private val system: ActorSystem = server.actorSystem
   implicit private val materializer: Materializer = server.materializer
 
-  private lazy val client: ModelService = server.serviceClient.implement[ModelService]
+  // create request
+  val gridProperties = GridProperties(10, 10)
+  val graphProperties = GraphProperties(Some(gridProperties))
+  val modelProperties = ModelProperties(ModelType.GRAPH, Some(graphProperties))
+  val stringifiedModelProperties: String = Json.toJson(modelProperties).toString
+  val createMutation: String = """mutation ($properties: ModelPropertiesInputType!) {create(properties: $properties) {
+                           |id
+                           |command
+                           |}}""".stripMargin
+  val variables = s"""{ "properties": $stringifiedModelProperties}"""
+  log.debug(s"CREATE QUERY: $createMutation")
+  log.debug(s"VARIABLES: $variables")
+  val createRequest = GraphQLRequest(createMutation, None, Some(variables))
 
   protected override def beforeAll(): Unit = server
-
   protected override def afterAll(): Unit = server.stop()
 
   "model service" should {
 
     "respond to service health check request" in {
+      val client: ModelService = server.serviceClient.implement[ModelService]
       client.checkServiceHealth.invoke.map { response =>
         log.debug(s"RESPONSE: $response")
         response should ===(HealthResponse("model"))
       }
     }
 
-    "respond to model health check request" in {
-      val id = UUID.randomUUID().toString
-      client.checkModelHealth(id).invoke.map { response =>
-        log.debug(s"RESPONSE: $response")
-        response should ===(HealthResponse("model", Some(id.toString)))
-      }
-    }
-
     "respond to graphql create mutation" in  {
-      val gridProperties = GridProperties(10, 10)
-      val graphProperties = GraphProperties(Some(gridProperties))
-      val modelProperties = ModelProperties(ModelType.GRAPH, Some(graphProperties))
-      val value = Json.toJson(modelProperties).toString
-      val mutation = """mutation ($properties: ModelPropertiesInputType!) {create(properties: $properties) {
-                       |id
-                       |command
-                       |}}""".stripMargin
-      val variables = s"""{ "properties": $value}"""
-      val request = GraphQLRequest(mutation, None, Some(variables))
-      client.postGraphQLQuery().invoke(request).map { response =>
-        log.debug(s"RESPONSE: $response")
-        // response should ===(HealthResponse("model", Some(id.toString)))
-        assert(true)
+      val client: ModelService = server.serviceClient.implement[ModelService]
+      client.postGraphQLQuery().invoke(createRequest).map { response =>
+        log.debug(s"CREATE RESPONSE: $response")
+        (response \ "data" \ "create" \ "command").as[String] shouldBe "CreateModel"
       }
     }
 
-/*
-    "respond to create model request" in  {
-      val gridProperties = GridProperties(10, 10)
-      val graphProperties = GraphProperties(Some(gridProperties))
-      val modelProperties = ModelProperties(ModelType.GRAPH, Some(graphProperties))
-      val request = CreateModelRequest(modelProperties)
-      client.createModel.invoke(request).map { response =>
-        log.debug(s"RESPONSE: $response")
-        // response should ===(HealthResponse("model", Some(id.toString)))
-        assert(true)
+    "respond to graphql destroy mutation" in  {
+      val client: ModelService = server.serviceClient.implement[ModelService]
+      client.postGraphQLQuery().invoke(createRequest).flatMap { createResponse =>
+        log.debug(s"CREATE RESPONSE: $createResponse")
+        (createResponse \ "data" \ "create" \ "command").as[String] shouldBe "CreateModel"
+        val id = (createResponse \ "data" \ "create" \ "id").as[String]
+        val destroyMutation: String = s"""mutation {destroy(id: "$id") {
+                                         |id
+                                         |command
+                                         |}}""".stripMargin
+        log.debug(s"DESTROY MUTATION: $destroyMutation")
+        val destroyRequest = GraphQLRequest(destroyMutation, None, None)
+        client.postGraphQLQuery().invoke(destroyRequest).map { destroyResponse =>
+          log.debug(s"DESTROY RESPONSE: $destroyResponse")
+          (destroyResponse \ "data" \ "destroy" \ "id").as[String] shouldBe id
+          (destroyResponse \ "data" \ "destroy" \ "command").as[String] shouldBe "DestroyModel"
+        }
       }
     }
 
-    "publish ModelChange messages" in  {
-      val source = client.changeTopic.subscribe.atMostOnceSource
-      source
-        .runWith(TestSink.probe[ModelChange])
-        .request(1)
-        .expectNext should ===(PubMessage("msg 1"))
-      log.debug(s"RESPONSE: $response")
-      // response should ===(HealthResponse("model", Some(id.toString)))
-      assert(true)
+    "respond to graphql read query" in  {
+      val client: ModelService = server.serviceClient.implement[ModelService]
+      client.postGraphQLQuery().invoke(createRequest).flatMap { createResponse =>
+        log.debug(s"CREATE RESPONSE: $createResponse")
+        (createResponse \ "data" \ "create" \ "command").as[String] shouldBe "CreateModel"
+        val id = (createResponse \ "data" \ "create" \ "id").as[String]
+        val readQuery: String = s"""query {read(id: "$id") {
+                                   |id
+                                   |state {
+                                   |id
+                                   |seed
+                                   |}
+                                   |}}""".stripMargin
+        log.debug(s"READ QUERY: $readQuery")
+        val readRequest = GraphQLRequest(readQuery, None, None)
+        client.postGraphQLQuery().invoke(readRequest).map { readResponse =>
+          log.debug(s"READ RESPONSE: $readResponse")
+          (readResponse \ "data" \ "read" \ "id").as[String] shouldBe id
+          (readResponse \ "data" \ "read" \ "state" \ "seed").as[Long] shouldBe modelProperties.seed
+        }
+      }
     }
-*/
 
-  }
+   }
 
 }

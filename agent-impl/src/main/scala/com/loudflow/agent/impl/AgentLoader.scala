@@ -18,6 +18,7 @@ package com.loudflow.agent.impl
 import play.api.libs.ws.ahc.AhcWSComponents
 import com.lightbend.lagom.scaladsl.api.ServiceLocator
 import com.lightbend.lagom.scaladsl.api.ServiceLocator.NoServiceLocator
+import com.loudflow.exception.ServiceExceptionSerializer
 import com.lightbend.lagom.scaladsl.persistence.cassandra.CassandraPersistenceComponents
 import com.lightbend.lagom.scaladsl.server._
 import com.lightbend.lagom.scaladsl.devmode.LagomDevModeComponents
@@ -25,7 +26,6 @@ import com.lightbend.lagom.scaladsl.broker.kafka.LagomKafkaComponents
 import com.lightbend.lagom.scaladsl.playjson.JsonSerializerRegistry
 import com.loudflow.agent.api.AgentService
 import com.softwaremill.macwire._
-import com.loudflow.exception.CustomExceptionSerializer
 import com.loudflow.model.api.ModelService
 
 class AgentLoader extends LagomApplicationLoader {
@@ -42,7 +42,7 @@ abstract class AgentApplication(context: LagomApplicationContext) extends LagomA
 
   override lazy val lagomServer: LagomServer = serverFor[AgentService](wire[AgentServiceImpl])
   override lazy val jsonSerializerRegistry: JsonSerializerRegistry = AgentSerializerRegistry
-  override lazy val defaultExceptionSerializer = new CustomExceptionSerializer(environment)
+  override lazy val defaultExceptionSerializer = new ServiceExceptionSerializer(environment)
 
   lazy val modelService: ModelService = serviceClient.implement[ModelService]
 

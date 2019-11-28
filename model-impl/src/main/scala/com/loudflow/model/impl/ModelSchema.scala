@@ -2,31 +2,25 @@ package com.loudflow.model.impl
 
 import com.loudflow.domain.model.entity._
 import com.loudflow.domain.model._
+import com.loudflow.domain.model.graph.GraphModelState
 import com.loudflow.model.impl.ModelCommand.{CommandReply, ReadReply}
 import com.loudflow.util.{DoubleSpan, IntSpan}
-import sangria.schema.{BooleanType, EnumType, EnumValue, Field, FloatType, InputField, InputObjectType, IntType, InterfaceType, ListInputType, ListType, LongType, ObjectType, OptionInputType, OptionType, StringType, fields}
+import sangria.macros.derive._
+import sangria.schema._
 
 object ModelSchema {
 
-  val IntSpanType =
-    ObjectType (
-      "IntSpanType",
-      "Data structure defining integer min/max limits with some helper functions.",
-      fields[Unit, IntSpan](
-        Field("min", IntType, description = Some("Minimum value of integer span."), resolve = _.value.min),
-        Field("max", IntType, description = Some("Maximum value of integer span."), resolve = _.value.max)
-      )
-    )
+  val IntSpanType: ObjectType[Unit, IntSpan] =
+    deriveObjectType[Unit, IntSpan](
+      ObjectTypeDescription("Data structure defining integer min/max limits with some helper functions."),
+      DocumentField("min", "Minimum value of integer span."),
+      DocumentField("max", "Maximum value of integer span."))
 
-  val DoubleSpanType =
-    ObjectType (
-      "DoubleSpanType",
-      "Data structure defining integer min/max limits with some helper functions.",
-      fields[Unit, DoubleSpan](
-        Field("min", FloatType, description = Some("Minimum value of double span."), resolve = _.value.min),
-        Field("max", FloatType, description = Some("Maximum value of double span."), resolve = _.value.max)
-      )
-    )
+  val DoubleSpanType: ObjectType[Unit, DoubleSpan] =
+    deriveObjectType[Unit, DoubleSpan](
+      ObjectTypeDescription("Data structure defining double min/max limits with some helper functions."),
+      DocumentField("min", "Minimum value of double span."),
+      DocumentField("max", "Maximum value of double span."))
 
   val EntityCategoryEnum =
     EnumType (
@@ -38,16 +32,12 @@ object ModelSchema {
       )
     )
 
-  val PositionType =
-    ObjectType (
-      "PositionType",
-      "Data structure defining positions in model.",
-      fields[Unit, Position](
-        Field("x", FloatType, description = Some("X-coordinate of position."), resolve = _.value.x),
-        Field("y", FloatType, description = Some("Y-coordinate of position."), resolve = _.value.y),
-        Field("z", FloatType, description = Some("Z-coordinate of position."), resolve = _.value.z)
-      )
-    )
+  val PositionType: ObjectType[Unit, Position] =
+    deriveObjectType[Unit, Position](
+      ObjectTypeDescription("Data structure defining positions in model."),
+      DocumentField("x", "X-coordinate of position."),
+      DocumentField("y", "Y-coordinate of position."),
+      DocumentField("z", "Z-coordinate of position."))
 
   val EntityOptionsType =
     ObjectType (
@@ -221,12 +211,26 @@ object ModelSchema {
   val ModelStateType =
     InterfaceType (
       "ModelStateType",
-      "Properties for defining a graph-based model.",
+      "Model state.",
       fields[Unit, ModelState](
         Field("id", StringType, description = Some("Model identifier."), resolve = _.value.id),
         Field("seed", LongType, description = Some("Model seed."), resolve = _.value.seed),
         Field("properties", ModelPropertiesType, description = Some("Model properties."), resolve = _.value.properties),
         Field("entities", ListType(EntityType), description = Some("Model entities."), resolve = _.value.entities.toSeq)
+      )
+    )
+
+  val GraphModelStateType =
+    ObjectType (
+      "GraphModelStateType",
+      "Graph model state.",
+      interfaces[Unit, GraphModelState](ModelStateType),
+      fields[Unit, GraphModelState](
+        Field("id", StringType, description = Some("Graph model identifier."), resolve = _.value.id),
+        Field("seed", LongType, description = Some("Graph model seed."), resolve = _.value.seed),
+        Field("properties", ModelPropertiesType, description = Some("Graph model properties."), resolve = _.value.properties),
+        Field("entities", ListType(EntityType), description = Some("Graph model entities."), resolve = _.value.entities.toSeq),
+        Field("positions", ListType(PositionType), description = Some("Graph model positions."), resolve = _.value.positions.toSeq)
       )
     )
 
@@ -389,5 +393,7 @@ object ModelSchema {
         InputField("entities", ListInputType(EntityPropertiesInputType), "List of entity properties for each entity kind used in the model.")
       )
     )
+
+  val IdInputType = Argument("id", StringType, description = "Identifier")
 
 }
