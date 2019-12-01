@@ -13,11 +13,9 @@
    file 'LICENSE.txt', which is part of this source code package.
 
 ************************************************************************ */
-package com.loudflow.simulation.api
+package com.loudflow.service
 
-import com.loudflow.domain.model.ModelProperties
-import play.api.libs.json.{Format, Json}
-import com.loudflow.domain.simulation.SimulationProperties
+import play.api.libs.json.{Format, JsObject, JsValue, Json}
 
-final case class CreateSimulationRequest(simulation: SimulationProperties, model: ModelProperties)
-object CreateSimulationRequest { implicit val format: Format[CreateSimulationRequest] = Json.format }
+final case class GraphQLRequest(query: String, operationName: Option[String] = None, variables: Option[String] = None)
+object GraphQLRequest { implicit val format: Format[GraphQLRequest] = Json.format }

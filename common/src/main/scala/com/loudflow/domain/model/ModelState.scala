@@ -19,6 +19,7 @@ import com.loudflow.domain.model.entity.{Entity, EntityOptions, EntityProperties
 import com.loudflow.domain.model.graph.GraphModelState
 import com.loudflow.util.JavaRandom
 import play.api.libs.json._
+import sangria.schema.{Field, InterfaceType, ListType, LongType, StringType, fields}
 
 trait ModelState {
   def demuxer: String
@@ -48,6 +49,18 @@ object ModelState {
     }
     jsValue.transform(JsPath.json.update((JsPath \ 'demuxer).json.put(JsString(demuxer)))).get
   }
+
+  val SchemaType =
+    InterfaceType (
+      "ModelStateType",
+      "Model state.",
+      fields[Unit, ModelState](
+        Field("id", StringType, description = Some("Model identifier."), resolve = _.value.id),
+        Field("seed", LongType, description = Some("Model seed."), resolve = _.value.seed),
+        Field("properties", ModelProperties.SchemaType, description = Some("Model properties."), resolve = _.value.properties),
+        Field("entities", ListType(Entity.SchemaType), description = Some("Model entities."), resolve = _.value.entities.toSeq)
+      )
+    )
 
   def apply(id: String, properties: ModelProperties): ModelState = properties.modelType match {
     case ModelType.GRAPH => GraphModelState(id, properties)

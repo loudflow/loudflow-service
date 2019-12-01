@@ -15,12 +15,12 @@
 ************************************************************************ */
 package com.loudflow.simulation.impl
 
-import akka.Done
 import akka.actor.{ActorSystem, Cancellable}
 import com.lightbend.lagom.scaladsl.persistence.{PersistentEntity, PersistentEntityRef, PersistentEntityRegistry}
 import com.loudflow.domain.model._
 import com.loudflow.domain.simulation.SimulationState
-import com.loudflow.simulation.api.ReadSimulationResponse
+import com.loudflow.service.Command.CommandReply
+import com.loudflow.simulation.impl.SimulationCommand.ReadReply
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.ExecutionContext
@@ -44,10 +44,10 @@ class SimulationPersistentEntity()(implicit val persistentEntityRegistry: Persis
   }
 
   def void: Actions = { Actions()
-    .onCommand[CreateSimulation, Done] {
+    .onCommand[CreateSimulation, CommandReply] {
       case (CreateSimulation(traceId, simulation, model), ctx, _) =>
         log.trace(s"[$traceId] SimulationPersistentEntity[$entityId][void] received command: CreateSimulation($simulation, $model)")
-        ctx.thenPersist(SimulationCreated(entityId, traceId, simulation, model))(_ => ctx.done)
+        ctx.thenPersist(SimulationCreated(entityId, traceId, simulation, model))(_ => ctx.reply(CommandReply(entityId, traceId, "CreateSimulation")))
     }
     .onEvent {
       case (SimulationCreated(_, traceId, simulation, model), _) =>
@@ -57,32 +57,32 @@ class SimulationPersistentEntity()(implicit val persistentEntityRegistry: Persis
   }
 
   def idle: Actions = { Actions()
-    .onCommand[DestroySimulation, Done] {
+    .onCommand[DestroySimulation, CommandReply] {
       case (DestroySimulation(traceId), ctx, _) =>
         log.trace(s"[$traceId] SimulationPersistentEntity[$entityId][idle] received command: DestroySimulation()")
-        ctx.thenPersist(SimulationDestroyed(entityId, traceId))(_ => ctx.done)
+        ctx.thenPersist(SimulationDestroyed(entityId, traceId))(_ => ctx.reply(CommandReply(entityId, traceId, "DestroySimulation")))
     }
-    .onCommand[StartSimulation, Done] {
+    .onCommand[StartSimulation, CommandReply] {
       case (StartSimulation(traceId), ctx, state) =>
         log.trace(s"[$traceId] SimulationPersistentEntity[$entityId][idle] received command: StartSimulation()")
         state match {
           case Some(s) =>
-            ctx.thenPersist(SimulationStarted(entityId, traceId, createModel(s.model, traceId)))(_ => ctx.done)
+            ctx.thenPersist(SimulationStarted(entityId, traceId, createModel(s.model, traceId)))(_ => ctx.reply(CommandReply(entityId, traceId, "StartSimulation")))
           case None =>
             ctx.commandFailed(new IllegalStateException(s"[$traceId] SimulationPersistentEntity[$entityId][running] failed due to missing state while handling command: StartSimulation()"))
             ctx.done
         }
     }
-    .onCommand[ResumeSimulation, Done] {
+    .onCommand[ResumeSimulation, CommandReply] {
       case (ResumeSimulation(traceId), ctx, _) =>
         log.trace(s"[$traceId] SimulationPersistentEntity[$entityId][idle] received command: ResumeSimulation()")
-        ctx.thenPersist(SimulationResumed(entityId, traceId))(_ => ctx.done)
+        ctx.thenPersist(SimulationResumed(entityId, traceId))(_ => ctx.reply(CommandReply(entityId, traceId, "ResumeSimulation")))
     }
-    .onReadOnlyCommand[ReadSimulation, ReadSimulationResponse] {
+    .onReadOnlyCommand[ReadSimulation, ReadReply] {
       case (ReadSimulation(traceId), ctx, state) =>
         log.trace(s"[$traceId] SimulationPersistentEntity[$entityId][idle] received command: ReadSimulation()")
         state match {
-          case Some(s) => ReadSimulationResponse(entityId, s)
+          case Some(s) => ReadReply(entityId, traceId, s)
           case None =>
             ctx.commandFailed(new IllegalStateException(s"[$traceId] SimulationPersistentEntity[$entityId][idle] failed due to missing state while handling command: ReadSimulation()"))
         }
@@ -111,48 +111,48 @@ class SimulationPersistentEntity()(implicit val persistentEntityRegistry: Persis
   }
 
   def running: Actions = { Actions()
-    .onCommand[DestroySimulation, Done] {
+    .onCommand[DestroySimulation, CommandReply] {
       case (DestroySimulation(traceId), ctx, _) =>
         log.trace(s"[$traceId] SimulationPersistentEntity[$entityId][running] received command: DestroySimulation()")
-        ctx.thenPersist(SimulationDestroyed(entityId, traceId))(_ => ctx.done)
+        ctx.thenPersist(SimulationDestroyed(entityId, traceId))(_ => ctx.reply(CommandReply(entityId, traceId, "DestroySimulation")))
     }
-    .onCommand[StopSimulation, Done] {
+    .onCommand[StopSimulation, CommandReply] {
       case (StopSimulation(traceId), ctx, state) =>
         log.trace(s"[$traceId] SimulationPersistentEntity[$entityId][running] received command: StopSimulation()")
         state match {
           case Some(s) =>
-            ctx.thenPersist(SimulationStopped(entityId, traceId, destroyModel(s.model, traceId)))(_ => ctx.done)
+            ctx.thenPersist(SimulationStopped(entityId, traceId, destroyModel(s.model, traceId)))(_ => ctx.reply(CommandReply(entityId, traceId, "StopSimulation")))
           case None =>
             ctx.commandFailed(new IllegalStateException(s"[$traceId] SimulationPersistentEntity[$entityId][running] failed due to missing state while handling command: StopSimulation()"))
             ctx.done
         }
     }
-    .onCommand[PauseSimulation, Done] {
+    .onCommand[PauseSimulation, CommandReply] {
       case (PauseSimulation(traceId), ctx, _) =>
         log.trace(s"[$traceId] SimulationPersistentEntity[$entityId][running] received command: PauseSimulation()")
-        ctx.thenPersist(SimulationPaused(entityId, traceId))(_ => ctx.done)
+        ctx.thenPersist(SimulationPaused(entityId, traceId))(_ => ctx.reply(CommandReply(entityId, traceId, "PauseSimulation")))
     }
-    .onCommand[AdvanceSimulation, Done] {
+    .onCommand[AdvanceSimulation, CommandReply] {
       case (AdvanceSimulation(traceId), ctx, state) =>
         log.trace(s"[$traceId] SimulationPersistentEntity[$entityId][running] received command: AdvanceSimulation()")
         state match {
           case Some(s) =>
-            ctx.thenPersist(SimulationAdvanced(entityId, traceId, advanceModel(s.time, s.model, traceId)))(_ => ctx.done)
+            ctx.thenPersist(SimulationAdvanced(entityId, traceId, advanceModel(s.time, s.model, traceId)))(_ => ctx.reply(CommandReply(entityId, traceId, "AdvanceSimulation")))
           case None =>
             ctx.commandFailed(new IllegalStateException(s"[$traceId] SimulationPersistentEntity[$entityId][running] failed due to missing state while handling command: AdvanceSimulation()"))
             ctx.done
         }
     }
-    .onCommand[UpdateSimulation, Done] {
+    .onCommand[UpdateSimulation, CommandReply] {
       case (UpdateSimulation(traceId, changeEvent), ctx, _) =>
         log.trace(s"[$traceId] SimulationPersistentEntity[$entityId][running] received command: UpdateSimulation($changeEvent)")
-        ctx.thenPersist(SimulationUpdated(entityId, traceId, changeEvent))(_ => ctx.done)
+        ctx.thenPersist(SimulationUpdated(entityId, traceId, changeEvent))(_ => ctx.reply(CommandReply(entityId, traceId, "UpdateSimulation")))
     }
-    .onReadOnlyCommand[ReadSimulation, ReadSimulationResponse] {
+    .onReadOnlyCommand[ReadSimulation, ReadReply] {
       case (ReadSimulation(traceId), ctx, state) =>
         log.trace(s"[$traceId] SimulationPersistentEntity[$entityId][running] received command: ReadSimulation()")
         state match {
-          case Some(s) => ReadSimulationResponse(entityId, s)
+          case Some(s) => ReadReply(entityId, traceId, s)
           case None =>
             ctx.commandFailed(new IllegalStateException(s"[$traceId] SimulationPersistentEntity[$entityId][running] failed due to missing state while handling command: ReadSimulation()"))
         }

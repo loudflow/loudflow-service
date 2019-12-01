@@ -27,7 +27,8 @@ import com.lightbend.lagom.scaladsl.api.transport.{ResponseHeader, TransportErro
 import com.lightbend.lagom.scaladsl.broker.TopicProducer
 import com.lightbend.lagom.scaladsl.persistence.{EventStreamElement, PersistentEntityRef, PersistentEntityRegistry}
 import com.lightbend.lagom.scaladsl.server.ServerServiceCall
-import com.loudflow.api.{GraphQLRequest, HealthResponse}
+import com.loudflow.domain.model.graph.GraphModelState
+import com.loudflow.service.{Command, GraphQLRequest, HealthResponse}
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import com.loudflow.model.api.ModelService
@@ -48,7 +49,7 @@ class ModelServiceImpl(simulationService: SimulationService, persistentEntityReg
 
   simulationService.actionTopic.subscribe.atLeastOnce(
     Flow.fromFunction(action => {
-      log.trace(s"[${action.traceId}] SimulationService received model change event [$action]")
+      log.trace(s"[${action.traceId}] ModelService received model action message [$action]")
       ModelCommand.fromAction(action).foreach(command => {
         persistentEntity(action.modelId).ask(command)
       })
@@ -59,52 +60,6 @@ class ModelServiceImpl(simulationService: SimulationService, persistentEntityReg
   override def checkServiceHealth = ServiceCall { _ =>
     Future.successful(HealthResponse("model"))
   }
-
-  val modelQueries: List[Field[ModelServiceImpl.Context, Unit]] = List(
-    Field(
-      name = "read",
-      fieldType = ModelSchema.ReadReplyType,
-      arguments = Argument("id", StringType) :: Nil,
-      resolve = graphqlCtx => {
-        val serviceCtx = graphqlCtx.ctx
-        val id = graphqlCtx.args.arg[String]("id")
-        val command = ReadModel(serviceCtx.traceId)
-        persistentEntity(id).ask(command)
-      }
-    )
-  )
-
-  val modelMutations: List[Field[ModelServiceImpl.Context, Unit]] = List(
-    Field(
-      name = "create",
-      fieldType = ModelSchema.CommandReplyType,
-      arguments = Argument("properties", ModelSchema.ModelPropertiesInputType) :: Nil,
-      resolve = graphqlCtx => {
-        val serviceCtx = graphqlCtx.ctx
-        val properties = graphqlCtx.args.arg[ModelProperties]("properties")
-        val command = CreateModel(serviceCtx.traceId, properties)
-        val id = UUID.randomUUID.toString
-        persistentEntity(id).ask(command)
-      }
-    ),
-    Field(
-      name = "destroy",
-      fieldType = ModelSchema.CommandReplyType,
-      arguments = Argument("id", StringType) :: Nil,
-      resolve = graphqlCtx => {
-        val serviceCtx = graphqlCtx.ctx
-        val id = graphqlCtx.args.arg[String]("id")
-        val command = DestroyModel(serviceCtx.traceId)
-        persistentEntity(id).ask(command)
-      }
-    )
-  )
-
-  val modelSchema = Schema(
-    query = ObjectType("Query", fields(modelQueries: _*)),
-    mutation = Some(ObjectType("Mutation", fields(modelMutations: _*))),
-    additionalTypes = ModelSchema.GraphModelStateType :: Nil
-  )
 
   override def getGraphQLQuery(query: String, operationName: Option[String], variables: Option[String]): ServiceCall[NotUsed, JsValue] = trace { traceId =>
     ServerServiceCall { (_, _) => graphQLQuery(query, operationName, variables, traceId) }
@@ -123,6 +78,61 @@ class ModelServiceImpl(simulationService: SimulationService, persistentEntityReg
       }
     }}
   }
+
+  override def changeTopic: Topic[ModelChange] =
+    TopicProducer.taggedStreamWithOffset(ModelEvent.Tag.allTags.toList) {
+      (tag, offset) => persistentEntityRegistry.eventStream(tag, offset).map(event => (toModelChange(event), event.offset))
+    }
+
+  /* ************************************************************************
+     PRIVATE
+  ************************************************************************ */
+
+  private val modelQueries: List[Field[ModelServiceImpl.Context, Unit]] = List(
+    Field(
+      name = "read",
+      fieldType = ModelCommand.ReadReplyType,
+      arguments = Argument("id", StringType) :: Nil,
+      resolve = graphqlCtx => readModel(graphqlCtx.args.arg[String]("id"), graphqlCtx.ctx.traceId)
+    )
+  )
+
+  private val modelMutations: List[Field[ModelServiceImpl.Context, Unit]] = List(
+    Field(
+      name = "create",
+      fieldType = Command.CommandReplyType,
+      arguments = Argument("properties", ModelProperties.SchemaInputType) :: Nil,
+      resolve = graphqlCtx => createModel(graphqlCtx.args.arg[ModelProperties]("properties"), graphqlCtx.ctx.traceId)
+    ),
+    Field(
+      name = "destroy",
+      fieldType = Command.CommandReplyType,
+      arguments = Argument("id", StringType) :: Nil,
+      resolve = graphqlCtx => destroyModel(graphqlCtx.args.arg[String]("id"), graphqlCtx.ctx.traceId)
+    )
+  )
+
+  private def createModel(properties: ModelProperties, traceId: String): Future[Command.CommandReply] = {
+    val command = CreateModel(traceId, properties)
+    val id = UUID.randomUUID.toString
+    persistentEntity(id).ask(command)
+  }
+
+  private def destroyModel(id: String, traceId: String): Future[Command.CommandReply] = {
+    val command = DestroyModel(traceId)
+    persistentEntity(id).ask(command)
+  }
+
+  private def readModel(id: String, traceId: String): Future[ModelCommand.ReadReply] = {
+    val command = ReadModel(traceId)
+    persistentEntity(id).ask(command)
+  }
+
+  private val modelSchema = Schema(
+    query = ObjectType("Query", fields(modelQueries: _*)),
+    mutation = Some(ObjectType("Mutation", fields(modelMutations: _*))),
+    additionalTypes = GraphModelState.SchemaType :: Nil
+  )
 
   private def graphQLQuery(query: String, operationName: Option[String], variables: Option[String], traceId: String): Future[(ResponseHeader, JsValue)] = {
     log.debug(s"QUERY: $query")
@@ -155,16 +165,11 @@ class ModelServiceImpl(simulationService: SimulationService, persistentEntityReg
       case None => Json.obj()
     }
 
-  def trace[Request, Response](serviceCall: String => ServerServiceCall[Request, Response]): ServerServiceCall[Request, Response] = ServerServiceCall.compose(header => {
+  private def trace[Request, Response](serviceCall: String => ServerServiceCall[Request, Response]): ServerServiceCall[Request, Response] = ServerServiceCall.compose(header => {
     val traceId = UUID.randomUUID.toString
     log.trace(s"[$traceId] ModelService received request ${header.method} ${header.uri}")
     serviceCall(traceId)
   })
-
-  override def changeTopic: Topic[ModelChange] =
-    TopicProducer.taggedStreamWithOffset(ModelEvent.Tag.allTags.toList) {
-      (tag, offset) => persistentEntityRegistry.eventStream(tag, offset).map(event => (toModelChange(event), event.offset))
-    }
 
   private def toModelChange(element: EventStreamElement[ModelEvent]): ModelChange = element.event match {
     case event: ModelEvent => ModelEvent.toChange(event)
@@ -177,6 +182,6 @@ class ModelServiceImpl(simulationService: SimulationService, persistentEntityReg
 object ModelServiceImpl {
 
   final case class Context(traceId: String)
-  object Context { implicit val format: Format[ModelProperties] = Json.format }
+  object Context { implicit val format: Format[Context] = Json.format }
 
 }

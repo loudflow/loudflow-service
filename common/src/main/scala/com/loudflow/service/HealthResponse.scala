@@ -13,10 +13,17 @@
    file 'LICENSE.txt', which is part of this source code package.
 
 ************************************************************************ */
-package com.loudflow.agent.api
+package com.loudflow.service
 
-import com.loudflow.domain.agent.AgentState
 import play.api.libs.json.{Format, Json}
 
-final case class ReadAgentResponse(id: String, state: AgentState)
-object ReadAgentResponse { implicit val format: Format[ReadAgentResponse] = Json.format }
+final case class HealthResponse private(data: HealthResponse.Data)
+
+object HealthResponse {
+  implicit val format: Format[HealthResponse] = Json.format
+  def apply(`type`: String, id: Option[String] = None): HealthResponse = {
+    new HealthResponse(HealthResponse.Data(`type`, id))
+  }
+  final case class Data(`type`: String, id: Option[String] = None)
+  object Data { implicit val format: Format[Data] = Json.format }
+}

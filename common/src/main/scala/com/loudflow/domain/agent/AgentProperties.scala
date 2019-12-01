@@ -16,35 +16,46 @@
 package com.loudflow.domain.agent
 
 import play.api.libs.json._
-
 import com.loudflow.util.randomSeed
+import sangria.schema.{EnumType, EnumValue, Field, InputField, InputObjectType, IntType, LongType, ObjectType, fields}
 
 final case class AgentProperties(agentType: AgentType.Value, seed: Long = randomSeed, interval: Int = 100) {
   require(interval > 50, "Invalid argument 'interval' for AgentProperties.")
 }
-object AgentProperties { implicit val format: Format[AgentProperties] = Json.format }
+object AgentProperties {
+  implicit val format: Format[AgentProperties] = Json.format
+  val SchemaType =
+    ObjectType (
+      "AgentPropertiesType",
+      "Agent properties.",
+      fields[Unit, AgentProperties](
+        Field("agentType", AgentType.SchemaType, description = Some("Type of agent."), resolve = _.value.agentType),
+        Field("seed", LongType, description = Some("Random number generator seed for the simulation."), resolve = _.value.seed),
+        Field("interval", IntType, description = Some("Simulation interval."), resolve = _.value.interval)
+      )
+    )
+  val SchemaInputType: InputObjectType[AgentProperties] =
+    InputObjectType[AgentProperties] (
+      "AgentPropertiesInputType",
+      "Agent properties input.",
+      List(
+        InputField("agentType", AgentType.SchemaType, "Type of agent."),
+        InputField("seed", LongType, "Random number generator seed for the simulation."),
+        InputField("interval", IntType, "Simulation interval.")
+      )
+    )
+}
 
-object AgentType {
-
-  sealed trait Value
-
-  final case object Random extends Value {
-    val demuxer = "random"
-  }
-
-  val values: Set[Value] = Set(Random)
-
-  def fromString(value: String): Value = value.toLowerCase match {
-    case "random" => Random
-  }
-
-  implicit val reads: Reads[Value] = Reads { json =>
-    (JsPath \ "demuxer").read[String].reads(json).flatMap {
-      case "random" => JsSuccess(Random)
-      case other => JsError(s"Read AgentType failed due to unknown enumeration value $other.")
-    }
-  }
-  implicit val writes: Writes[Value] = Writes {
-    case Random => JsObject(Seq("demuxer" -> JsString("random")))
-  }
+object AgentType extends Enumeration {
+  type AgentType = Value
+  val RANDOM: AgentType.Value = Value
+  implicit val format: Format[AgentType.Value] = Json.formatEnum(this)
+  val SchemaType =
+    EnumType (
+      "AgentTypeEnum",
+      Some("Agent type."),
+      List (
+        EnumValue("RANDOM", value = AgentType.RANDOM, description = Some("Agent which acts randomly."))
+      )
+    )
 }

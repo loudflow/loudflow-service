@@ -15,47 +15,41 @@
 ************************************************************************ */
 package com.loudflow.model.impl
 
-import java.util.UUID
-
 import akka.actor.ActorSystem
 import akka.stream.Materializer
-import akka.stream.testkit.javadsl.TestSink
-import com.lightbend.lagom.scaladsl.api.broker.Topic
 import org.scalatest.{AsyncWordSpec, BeforeAndAfterAll, Matchers}
 import com.lightbend.lagom.scaladsl.server.LocalServiceLocator
-import com.lightbend.lagom.scaladsl.testkit.{ServiceTest, TestTopicComponents}
-import com.loudflow.api.{GraphQLRequest, HealthResponse}
-import com.loudflow.domain.model.{GraphProperties, GridProperties, ModelAction, ModelChange, ModelProperties, ModelState, ModelType}
-import com.loudflow.model.api.{CreateModelRequest, ModelService}
-import com.loudflow.simulation.api.SimulationService
+import com.lightbend.lagom.scaladsl.testkit.ServiceTest
+import com.loudflow.service.{GraphQLRequest, HealthResponse}
+import com.loudflow.domain.model.{GraphProperties, GridProperties, ModelProperties, ModelType}
+import com.loudflow.model.api.ModelService
 import org.slf4j.{Logger, LoggerFactory}
-import play.api.libs.json.{JsPath, Json, Writes}
+import play.api.libs.json.Json
 
 class ModelServiceImplTest extends AsyncWordSpec with Matchers with BeforeAndAfterAll {
 
   private final val log: Logger = LoggerFactory.getLogger(classOf[ModelServiceImplTest])
 
-  private lazy val server = ServiceTest.startServer(ServiceTest.defaultSetup.withCassandra()) { ctx =>
+  private val server = ServiceTest.startServer(ServiceTest.defaultSetup.withCassandra()) { ctx =>
     new ModelApplication(ctx) with LocalServiceLocator // with TestTopicComponents
   }
-  implicit private val system: ActorSystem = server.actorSystem
-  implicit private val materializer: Materializer = server.materializer
+  private implicit val system: ActorSystem = server.actorSystem
+  private implicit val materializer: Materializer = server.materializer
 
   // create request
-  val gridProperties = GridProperties(10, 10)
-  val graphProperties = GraphProperties(Some(gridProperties))
-  val modelProperties = ModelProperties(ModelType.GRAPH, Some(graphProperties))
-  val stringifiedModelProperties: String = Json.toJson(modelProperties).toString
-  val createMutation: String = """mutation ($properties: ModelPropertiesInputType!) {create(properties: $properties) {
+  private val gridProperties = GridProperties(10, 10)
+  private val graphProperties = GraphProperties(Some(gridProperties))
+  private val modelProperties = ModelProperties(ModelType.GRAPH, Some(graphProperties))
+  private val stringifiedModelProperties: String = Json.toJson(modelProperties).toString
+  private val createMutation: String = """mutation ($properties: ModelPropertiesInputType!) {create(properties: $properties) {
                            |id
                            |command
                            |}}""".stripMargin
-  val variables = s"""{ "properties": $stringifiedModelProperties}"""
+  private val variables = s"""{"properties": $stringifiedModelProperties}"""
   log.debug(s"CREATE QUERY: $createMutation")
   log.debug(s"VARIABLES: $variables")
-  val createRequest = GraphQLRequest(createMutation, None, Some(variables))
+  private val createRequest = GraphQLRequest(createMutation, None, Some(variables))
 
-  protected override def beforeAll(): Unit = server
   protected override def afterAll(): Unit = server.stop()
 
   "model service" should {

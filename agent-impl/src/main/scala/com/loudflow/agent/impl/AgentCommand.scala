@@ -15,33 +15,32 @@
 ************************************************************************ */
 package com.loudflow.agent.impl
 
-import akka.Done
 import play.api.libs.json._
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntity
-import com.loudflow.agent.api.ReadAgentResponse
-import com.loudflow.domain.Message
-import com.loudflow.domain.agent.AgentProperties
+import com.loudflow.agent.impl.AgentCommand.ReadReply
+import com.loudflow.domain.agent.{AgentProperties, AgentState}
 import com.loudflow.domain.model.{ModelChange, ModelProperties}
+import com.loudflow.service.Command
+import com.loudflow.service.Command.CommandReply
+import sangria.schema.{Field, ObjectType, StringType, fields}
 
-sealed trait AgentCommand extends Message {
-  def demuxer: String
-}
+sealed trait AgentCommand extends Command
 
 /* ************************************************************************
    CRUD Commands
 ************************************************************************ */
 
-final case class CreateAgent(traceId: String, agent: AgentProperties, model: ModelProperties) extends PersistentEntity.ReplyType[Done] with AgentCommand {
+final case class CreateAgent(traceId: String, agent: AgentProperties, model: ModelProperties) extends PersistentEntity.ReplyType[CommandReply] with AgentCommand {
   val demuxer = "create-agent"
 }
 object CreateAgent { implicit val format: Format[CreateAgent] = Json.format }
 
-final case class DestroyAgent(traceId: String) extends PersistentEntity.ReplyType[Done] with AgentCommand {
+final case class DestroyAgent(traceId: String) extends PersistentEntity.ReplyType[CommandReply] with AgentCommand {
   val demuxer = "destroy-agent"
 }
 object DestroyAgent { implicit val format: Format[DestroyAgent] = Json.format }
 
-final case class ReadAgent(traceId: String) extends PersistentEntity.ReplyType[ReadAgentResponse] with AgentCommand {
+final case class ReadAgent(traceId: String) extends PersistentEntity.ReplyType[ReadReply] with AgentCommand {
   val demuxer = "read-agent"
 }
 object ReadAgent { implicit val format: Format[ReadAgent] = Json.format }
@@ -50,32 +49,32 @@ object ReadAgent { implicit val format: Format[ReadAgent] = Json.format }
    Control Commands
 ************************************************************************ */
 
-final case class StartAgent(traceId: String) extends PersistentEntity.ReplyType[Done] with AgentCommand {
+final case class StartAgent(traceId: String) extends PersistentEntity.ReplyType[CommandReply] with AgentCommand {
   val demuxer = "start-agent"
 }
 object StartAgent { implicit val format: Format[StartAgent] = Json.format }
 
-final case class StopAgent(traceId: String) extends PersistentEntity.ReplyType[Done] with AgentCommand {
+final case class StopAgent(traceId: String) extends PersistentEntity.ReplyType[CommandReply] with AgentCommand {
   val demuxer = "stop-agent"
 }
 object StopAgent { implicit val format: Format[StopAgent] = Json.format }
 
-final case class PauseAgent(traceId: String) extends PersistentEntity.ReplyType[Done] with AgentCommand {
+final case class PauseAgent(traceId: String) extends PersistentEntity.ReplyType[CommandReply] with AgentCommand {
   val demuxer = "pause-agent"
 }
 object PauseAgent { implicit val format: Format[PauseAgent] = Json.format }
 
-final case class ResumeAgent(traceId: String) extends PersistentEntity.ReplyType[Done] with AgentCommand {
+final case class ResumeAgent(traceId: String) extends PersistentEntity.ReplyType[CommandReply] with AgentCommand {
   val demuxer = "resume-agent"
 }
 object ResumeAgent { implicit val format: Format[ResumeAgent] = Json.format }
 
-final case class AdvanceAgent(traceId: String) extends PersistentEntity.ReplyType[Done] with AgentCommand {
+final case class AdvanceAgent(traceId: String) extends PersistentEntity.ReplyType[CommandReply] with AgentCommand {
   val demuxer = "advance-agent"
 }
 object AdvanceAgent { implicit val format: Format[AdvanceAgent] = Json.format }
 
-final case class UpdateAgent(traceId: String, change: ModelChange) extends PersistentEntity.ReplyType[Done] with AgentCommand {
+final case class UpdateAgent(traceId: String, change: ModelChange) extends PersistentEntity.ReplyType[CommandReply] with AgentCommand {
   val demuxer = "update-agent"
 }
 object UpdateAgent { implicit val format: Format[UpdateAgent] = Json.format }
@@ -113,4 +112,19 @@ object AgentCommand {
     }
     jsValue.transform(JsPath.json.update((JsPath \ 'demuxer).json.put(JsString(demuxer)))).get
   }
+
+  final case class ReadReply(id: String, traceId: String, state: AgentState)
+  object ReadReply { implicit val format: Format[ReadReply] = Json.format }
+
+  val ReadReplyType =
+    ObjectType (
+      "ReadReplyType",
+      "Read command reply.",
+      fields[Unit, ReadReply](
+        Field("id", StringType, description = Some("Persistent entity identifier."), resolve = _.value.id),
+        Field("traceId", StringType, description = Some("Trace identifier."), resolve = _.value.traceId),
+        Field("state", AgentState.SchemaType, description = Some("Agent state."), resolve = _.value.state)
+      )
+    )
+
 }

@@ -18,6 +18,8 @@ package com.loudflow.domain.model
 import play.api.libs.json._
 import com.loudflow.domain.model.graph.GraphHelper.Node
 import com.loudflow.util.DoubleSpan
+import sangria.macros.derive.{DocumentField, ObjectTypeDescription, deriveObjectType}
+import sangria.schema.{FloatType, InputField, InputObjectType, ObjectType}
 
 final case class Position(x: Double, y: Double, z: Double = 0.0) extends Node {
   val margin = 0.001
@@ -35,6 +37,27 @@ final case class Position(x: Double, y: Double, z: Double = 0.0) extends Node {
   }
 }
 object Position {
+
   implicit val format: Format[Position] = Json.format
+
   final case class Boundaries(x: DoubleSpan, y: DoubleSpan, z: Option[DoubleSpan] = None)
+
+  val SchemaType: ObjectType[Unit, Position] =
+    deriveObjectType[Unit, Position](
+      ObjectTypeDescription("Data structure defining positions in model."),
+      DocumentField("x", "X-coordinate of position."),
+      DocumentField("y", "Y-coordinate of position."),
+      DocumentField("z", "Z-coordinate of position."))
+
+  val SchemaInputType: InputObjectType[Position] =
+    InputObjectType[Position] (
+      "PositionInputType",
+      "Data structure defining positions in model.",
+      List(
+        InputField("x", FloatType, "X-coordinate of position."),
+        InputField("y", FloatType, "Y-coordinate of position."),
+        InputField("z", FloatType, "Z-coordinate of position.")
+      )
+    )
+
 }

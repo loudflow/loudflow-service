@@ -13,7 +13,7 @@
    file 'LICENSE.txt', which is part of this source code package.
 
 ************************************************************************ */
-package com.loudflow.api
+package com.loudflow.service
 
 import play.api.libs.json.{Format, Json}
 

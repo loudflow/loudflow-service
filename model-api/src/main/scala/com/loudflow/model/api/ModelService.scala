@@ -20,7 +20,7 @@ import com.lightbend.lagom.scaladsl.api.transport.Method
 import com.lightbend.lagom.scaladsl.api.{Descriptor, Service, ServiceCall}
 import com.lightbend.lagom.scaladsl.api.broker.Topic
 import com.lightbend.lagom.scaladsl.api.broker.kafka.{KafkaProperties, PartitionKeyStrategy}
-import com.loudflow.api.{GraphQLRequest, HealthResponse}
+import com.loudflow.service.{GraphQLRequest, HealthResponse}
 import com.loudflow.domain.model.ModelChange
 import play.api.libs.json.JsValue
 

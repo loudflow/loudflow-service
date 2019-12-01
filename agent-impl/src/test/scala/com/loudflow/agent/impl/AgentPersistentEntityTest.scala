@@ -18,47 +18,46 @@ package com.loudflow.agent.impl
 import java.util.UUID
 
 import scala.concurrent.ExecutionContext
-import akka.Done
 import akka.actor.ActorSystem
 import akka.testkit.TestKit
+import com.lightbend.lagom.scaladsl.persistence.PersistentEntityRegistry
 import com.lightbend.lagom.scaladsl.testkit.{PersistentEntityTestDriver, ServiceTest}
 import com.lightbend.lagom.scaladsl.playjson.JsonSerializerRegistry
 import com.lightbend.lagom.scaladsl.server.LocalServiceLocator
-import com.loudflow.domain.agent.{AgentProperties, AgentType, AgentState}
+import com.loudflow.domain.agent.{AgentProperties, AgentType}
 import com.loudflow.domain.model.{GraphProperties, GridProperties, ModelProperties, ModelType}
-import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpec}
+import com.loudflow.service.Command.CommandReply
+import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
+import org.slf4j.{Logger, LoggerFactory}
 
-class AgentPersistentEntityTest(implicit ec: ExecutionContext) extends WordSpec with Matchers with BeforeAndAfterAll {
+class AgentPersistentEntityTest(implicit ec: ExecutionContext) extends WordSpecLike with Matchers with BeforeAndAfterAll {
 
-  private val system = ActorSystem("GraphSimulationPersistentEntityTest", JsonSerializerRegistry.actorSystemSetupFor(AgentSerializerRegistry))
+  private final val log: Logger = LoggerFactory.getLogger(classOf[AgentPersistentEntityTest])
 
-  private lazy val server = ServiceTest.startServer(ServiceTest.defaultSetup.withCassandra()) { ctx =>
+  private implicit val system: ActorSystem = ActorSystem("SimulationPersistentEntityTest", JsonSerializerRegistry.actorSystemSetupFor(AgentSerializerRegistry))
+  private val server = ServiceTest.startServer(ServiceTest.defaultSetup.withCassandra()) { ctx =>
     new AgentApplication(ctx) with LocalServiceLocator
   }
+  private implicit val registry: PersistentEntityRegistry = server.application.persistentEntityRegistry
 
-  private def withTestDriver(block: PersistentEntityTestDriver[AgentCommand, AgentEvent, Option[AgentState]] => Unit): Unit = {
-    val id = UUID.randomUUID().toString
-    val driver = new PersistentEntityTestDriver(system, new AgentPersistentEntity()(server.application.persistentEntityRegistry, system, ec), id)
-    block(driver)
-    driver.getAllIssues should have size 0
-  }
-
-  override protected def beforeAll(): Unit = server
+  private val traceId = UUID.randomUUID.toString
+  private val gridProperties = GridProperties(10, 10)
+  private val graphProperties = GraphProperties(Some(gridProperties))
+  private val modelProperties = ModelProperties(ModelType.GRAPH, Some(graphProperties))
+  private val agentProperties = AgentProperties(AgentType.RANDOM)
 
   override protected def afterAll(): Unit = {
     TestKit.shutdownActorSystem(system)
   }
 
-  "GraphSimulationPersistentEntity" should {
+  "AgentPersistentEntity" should {
 
-    "handle CreateSimulation command" in withTestDriver { driver =>
-      val traceId = UUID.randomUUID.toString
-      val gridProperties = GridProperties(10, 10)
-      val graphProperties = GraphProperties(Some(gridProperties))
-      val modelProperties = ModelProperties(ModelType.GRAPH, Some(graphProperties))
-      val agentProperties = AgentProperties(AgentType.Random)
-      val outcome = driver.run(CreateAgent(traceId, agentProperties, modelProperties))
-      outcome.replies should ===(Done)
+    "handle CreateAgent command" in {
+      val id = UUID.randomUUID().toString
+      val driver = new PersistentEntityTestDriver(system, new AgentPersistentEntity(), id)
+      val created = driver.run(CreateAgent(traceId, agentProperties, modelProperties))
+      log.debug(s"CREATED: ${created.replies}")
+      created.replies should be(Seq(CommandReply(id, traceId, "CreateAgent")))
     }
 
   }

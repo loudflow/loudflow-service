@@ -16,13 +16,27 @@
 package com.loudflow.domain.simulation
 
 import play.api.libs.json._
-
 import com.loudflow.domain.model.ModelState
 import com.loudflow.util.JavaRandom
+import sangria.schema.{BooleanType, Field, LongType, ObjectType, fields}
 
 final case class SimulationState(properties: SimulationProperties, seed: Long, model: ModelState, ticks: Long = 1L, isRunning: Boolean = false) {
   require(ticks > 0L, "Invalid argument 'ticks' for SimulationState.")
   val random: JavaRandom = new JavaRandom(seed)
   def time: Long = properties.interval * ticks
 }
-object SimulationState { implicit val format: Format[SimulationState] = Json.format }
+object SimulationState {
+  implicit val format: Format[SimulationState] = Json.format
+  val SchemaType =
+    ObjectType (
+      "SimulationStateType",
+      "Simulation state.",
+      fields[Unit, SimulationState](
+        Field("seed", LongType, description = Some("Model seed."), resolve = _.value.seed),
+        Field("properties", SimulationProperties.SchemaType, description = Some("Simulation properties."), resolve = _.value.properties),
+        Field("model", ModelState.SchemaType, description = Some("Simulation properties."), resolve = _.value.model),
+        Field("ticks", LongType, description = Some("Number of ticks."), resolve = _.value.ticks),
+        Field("isRunning", BooleanType, description = Some("Is running flag."), resolve = _.value.isRunning)
+      )
+    )
+}

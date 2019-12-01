@@ -16,44 +16,53 @@
 package com.loudflow.domain.simulation
 
 import play.api.libs.json._
-
 import com.loudflow.util.randomSeed
+import sangria.schema.{EnumType, EnumValue, Field, InputField, InputObjectType, IntType, LongType, ObjectType, fields}
 
-final case class SimulationProperties(time: TimeSystem.Value = TimeSystem.Event, seed: Long = randomSeed, interval: Int = 100, step: Int = 1) {
+final case class SimulationProperties(time: TimeSystem.Value = TimeSystem.EVENT, seed: Long = randomSeed, interval: Int = 100, step: Int = 1) {
   require(interval > 50, "Invalid argument 'interval' for SimulationProperties.")
   require(step > 0, "Invalid argument 'step' for SimulationProperties.")
 }
-object SimulationProperties { implicit val format: Format[SimulationProperties] = Json.format }
+object SimulationProperties {
+  implicit val format: Format[SimulationProperties] = Json.format
+  val SchemaType =
+    ObjectType (
+      "SimulationPropertiesType",
+      "Simulation properties.",
+      fields[Unit, SimulationProperties](
+        Field("time", TimeSystem.SchemaType, description = Some("Type of model."), resolve = _.value.time),
+        Field("seed", LongType, description = Some("Random number generator seed for the simulation."), resolve = _.value.seed),
+        Field("interval", IntType, description = Some("Simulation interval."), resolve = _.value.interval),
+        Field("step", IntType, description = Some("Simulation step."), resolve = _.value.step)
+      )
+    )
+  val SchemaInputType: InputObjectType[SimulationProperties] =
+    InputObjectType[SimulationProperties] (
+      "SimulationPropertiesInputType",
+      "Simulation properties input.",
+      List(
+        InputField("time", TimeSystem.SchemaType, "Type of model."),
+        InputField("seed", LongType, "Random number generator seed for the simulation."),
+        InputField("interval", IntType, "Simulation interval."),
+        InputField("step", IntType, "Simulation step.")
+      )
+    )
+}
 
-object TimeSystem {
-
-  sealed trait Value
-
-  final case object Clock extends Value {
-    val demuxer = "clock"
-  }
-
-  final case object Event extends Value {
-    val demuxer = "event"
-  }
-
-  final case object Turn extends Value {
-    val demuxer = "turn"
-  }
-
-  val values: Set[Value] = Set(Clock, Event, Turn)
-
-  implicit val reads: Reads[Value] = Reads { json =>
-    (JsPath \ "demuxer").read[String].reads(json).flatMap {
-      case "clock" => JsSuccess(Clock)
-      case "event" => JsSuccess(Event)
-      case "turn" => JsSuccess(Turn)
-      case other => JsError(s"Read TemporalMode failed due to unknown enumeration value $other.")
-    }
-  }
-  implicit val writes: Writes[Value] = Writes {
-    case Clock => JsObject(Seq("demuxer" -> JsString("clock")))
-    case Event => JsObject(Seq("demuxer" -> JsString("event")))
-    case Turn => JsObject(Seq("demuxer" -> JsString("turn")))
-  }
+object TimeSystem extends Enumeration {
+  type TimeSystem = Value
+  val CLOCK: TimeSystem.Value = Value
+  val EVENT: TimeSystem.Value = Value
+  val TURN: TimeSystem.Value = Value
+  implicit val format: Format[TimeSystem.Value] = Json.formatEnum(this)
+  val SchemaType =
+    EnumType (
+      "TimeSystemEnum",
+      Some("Time system."),
+      List (
+        EnumValue("CLOCK", value = TimeSystem.CLOCK, description = Some("Clock-based time.")),
+        EnumValue("EVENT", value = TimeSystem.EVENT, description = Some("Event-based time.")),
+        EnumValue("TURN", value = TimeSystem.TURN, description = Some("Turn-based time."))
+      )
+    )
 }

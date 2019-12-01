@@ -19,9 +19,10 @@ import java.time.Instant
 import java.util.UUID
 
 import com.loudflow.domain.model.graph.GraphHelper.Node
-import com.loudflow.domain.model.{Direction, Position}
+import com.loudflow.domain.model.{Direction, EntityAddedChange, Position}
 import com.loudflow.util.{JavaRandom, shuffle}
 import play.api.libs.json._
+import sangria.schema.{Field, InputField, InputObjectType, IntType, ListInputType, ListType, LongType, ObjectType, OptionInputType, OptionType, StringType, fields}
 
 final case class Entity
 (
@@ -100,6 +101,19 @@ object Entity {
 
   def recoverClusterPoint(position: Position, center: Position): Position = Position(position.x - center.x, position.y - center.y, position.z - center.z)
 
+  val SchemaType =
+    ObjectType (
+      "EntityType",
+      "Data structure defining an entity.",
+      fields[Unit, Entity](
+        Field("id", StringType, description = Some("Entity identifier."), resolve = _.value.id),
+        Field("kind", StringType, description = Some("Entity kind."), resolve = _.value.kind),
+        Field("position", OptionType(Position.SchemaType), description = Some("Entity center position."), resolve = _.value.position),
+        Field("options", EntityOptions.SchemaType, description = Some("Entity options."), resolve = _.value.options),
+        Field("created", LongType, description = Some("Timestamp for when entity was created."), resolve = _.value.created),
+      )
+    )
+
 }
 
 final case class EntityOptions(cluster: Option[Array[Position]] = None, group: Option[Int] = None, lifeSpan: Option[Int] = None)
@@ -111,4 +125,29 @@ object EntityOptions {
     val lifeSpan = properties.population.lifeSpanRange.map(_.pick(random))
     EntityOptions(cluster, group, lifeSpan)
   }
+  val SchemaType =
+    ObjectType (
+      "EntityOptionsType",
+      "Data structure defining entity options.",
+      fields[Unit, EntityOptions](
+        Field("cluster", OptionType(ListType(Position.SchemaType)), description = Some("Entity cluster defined as list of positions."), resolve = { entityOptionsType =>
+          entityOptionsType.value.cluster match {
+            case Some(positionArray) => positionArray.toSeq
+            case None => Seq.empty[Position]
+          }
+        }),
+        Field("group", OptionType(IntType), description = Some("Entity group id."), resolve = _.value.group),
+        Field("lifeSpan", OptionType(IntType), description = Some("Entity life span."), resolve = _.value.lifeSpan)
+      )
+    )
+  val SchemaInputType: InputObjectType[EntityOptions] =
+    InputObjectType[EntityOptions] (
+      "EntityOptionsInputType",
+      "Data structure defining entity options.",
+      List(
+        InputField("cluster", OptionInputType(ListInputType(Position.SchemaInputType)), "Entity cluster defined as list of positions."),
+        InputField("group", OptionInputType(IntType), "Entity group id."),
+        InputField("lifeSpan", OptionInputType(IntType), "Entity life span.")
+      )
+    )
 }

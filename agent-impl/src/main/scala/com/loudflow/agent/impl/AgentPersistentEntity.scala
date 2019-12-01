@@ -15,12 +15,12 @@
 ************************************************************************ */
 package com.loudflow.agent.impl
 
-import akka.Done
 import akka.actor.{ActorSystem, Cancellable}
 import com.lightbend.lagom.scaladsl.persistence.{PersistentEntity, PersistentEntityRef, PersistentEntityRegistry}
-import com.loudflow.agent.api.ReadAgentResponse
+import com.loudflow.agent.impl.AgentCommand.ReadReply
 import com.loudflow.domain.agent.AgentState
 import com.loudflow.domain.model._
+import com.loudflow.service.Command.CommandReply
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.ExecutionContext
@@ -44,10 +44,10 @@ class AgentPersistentEntity(implicit val persistentEntityRegistry: PersistentEnt
   }
 
   def void: Actions = { Actions()
-    .onCommand[CreateAgent, Done] {
+    .onCommand[CreateAgent, CommandReply] {
       case (CreateAgent(traceId, agent, model), ctx, _) =>
         log.trace(s"[$traceId] AgentPersistentEntity[$entityId][void] received command: CreateAgent($agent, $model)")
-        ctx.thenPersist(AgentCreated(entityId, traceId, agent, model))(_ => ctx.done)
+        ctx.thenPersist(AgentCreated(entityId, traceId, agent, model))(_ => ctx.reply(CommandReply(entityId, traceId, "CreateAgent")))
     }
     .onEvent {
       case (AgentCreated(_, traceId, agent, model), _) =>
@@ -57,32 +57,32 @@ class AgentPersistentEntity(implicit val persistentEntityRegistry: PersistentEnt
   }
 
   def idle: Actions = { Actions()
-    .onCommand[DestroyAgent, Done] {
+    .onCommand[DestroyAgent, CommandReply] {
       case (DestroyAgent(traceId), ctx, _) =>
         log.trace(s"[$traceId] AgentPersistentEntity[$entityId][idle] received command: DestroyAgent()")
-        ctx.thenPersist(AgentDestroyed(entityId, traceId))(_ => ctx.done)
+        ctx.thenPersist(AgentDestroyed(entityId, traceId))(_ => ctx.reply(CommandReply(entityId, traceId, "DestroyAgent")))
     }
-    .onCommand[StartAgent, Done] {
+    .onCommand[StartAgent, CommandReply] {
       case (StartAgent(traceId), ctx, state) =>
         log.trace(s"[$traceId] AgentPersistentEntity[$entityId][idle] received command: StartAgent()")
         state match {
           case Some(s) =>
-            ctx.thenPersist(AgentStarted(entityId, traceId, createAgent(s.model, traceId)))(_ => ctx.done)
+            ctx.thenPersist(AgentStarted(entityId, traceId, createAgent(s.model, traceId)))(_ => ctx.reply(CommandReply(entityId, traceId, "StartAgent")))
           case None =>
             ctx.commandFailed(new IllegalStateException(s"[$traceId] AgentPersistentEntity[$entityId][running] failed due to missing state while handling command: StartAgent()"))
             ctx.done
         }
     }
-    .onCommand[ResumeAgent, Done] {
+    .onCommand[ResumeAgent, CommandReply] {
       case (ResumeAgent(traceId), ctx, _) =>
         log.trace(s"[$traceId] AgentPersistentEntity[$entityId][idle] received command: ResumeAgent()")
-        ctx.thenPersist(AgentResumed(entityId, traceId))(_ => ctx.done)
+        ctx.thenPersist(AgentResumed(entityId, traceId))(_ => ctx.reply(CommandReply(entityId, traceId, "ResumeAgent")))
     }
-    .onReadOnlyCommand[ReadAgent, ReadAgentResponse] {
+    .onReadOnlyCommand[ReadAgent, ReadReply] {
       case (ReadAgent(traceId), ctx, state) =>
         log.trace(s"[$traceId] AgentPersistentEntity[$entityId][idle] received command: ReadAgent()")
         state match {
-          case Some(s) => ReadAgentResponse(entityId, s)
+          case Some(s) => ReadReply(entityId, traceId, s)
           case None =>
             ctx.commandFailed(new IllegalStateException(s"[$traceId] AgentPersistentEntity[$entityId][idle] failed due to missing state while handling command: ReadAgent()"))
         }
@@ -111,48 +111,48 @@ class AgentPersistentEntity(implicit val persistentEntityRegistry: PersistentEnt
   }
 
   def active: Actions = { Actions()
-    .onCommand[DestroyAgent, Done] {
+    .onCommand[DestroyAgent, CommandReply] {
       case (DestroyAgent(traceId), ctx, _) =>
         log.trace(s"[$traceId] AgentPersistentEntity[$entityId][active] received command: DestroyAgent()")
-        ctx.thenPersist(AgentDestroyed(entityId, traceId))(_ => ctx.done)
+        ctx.thenPersist(AgentDestroyed(entityId, traceId))(_ => ctx.reply(CommandReply(entityId, traceId, "DestroyAgent")))
     }
-    .onCommand[StopAgent, Done] {
+    .onCommand[StopAgent, CommandReply] {
       case (StopAgent(traceId), ctx, state) =>
         log.trace(s"[$traceId] AgentPersistentEntity[$entityId][active] received command: StopAgent()")
         state match {
           case Some(s) =>
-            ctx.thenPersist(AgentStopped(entityId, traceId, destroyAgent(entityId, s.model, traceId)))(_ => ctx.done)
+            ctx.thenPersist(AgentStopped(entityId, traceId, destroyAgent(entityId, s.model, traceId)))(_ => ctx.reply(CommandReply(entityId, traceId, "StopAgent")))
           case None =>
             ctx.commandFailed(new IllegalStateException(s"[$traceId] AgentPersistentEntity[$entityId][active] failed due to missing state while handling command: StopAgent()"))
             ctx.done
         }
     }
-    .onCommand[PauseAgent, Done] {
+    .onCommand[PauseAgent, CommandReply] {
       case (PauseAgent(traceId), ctx, _) =>
         log.trace(s"[$traceId] AgentPersistentEntity[$entityId][active] received command: PauseAgent()")
-        ctx.thenPersist(AgentPaused(entityId, traceId))(_ => ctx.done)
+        ctx.thenPersist(AgentPaused(entityId, traceId))(_ => ctx.reply(CommandReply(entityId, traceId, "PauseAgent")))
     }
-    .onCommand[AdvanceAgent, Done] {
+    .onCommand[AdvanceAgent, CommandReply] {
       case (AdvanceAgent(traceId), ctx, state) =>
         log.trace(s"[$traceId] AgentPersistentEntity[$entityId][active] received command: AdvanceAgent()")
         state match {
           case Some(s) =>
-            ctx.thenPersist(AgentAdvanced(entityId, traceId, advanceAgent(entityId, s.model, traceId)))(_ => ctx.done)
+            ctx.thenPersist(AgentAdvanced(entityId, traceId, advanceAgent(entityId, s.model, traceId)))(_ => ctx.reply(CommandReply(entityId, traceId, "AdvanceAgent")))
           case None =>
             ctx.commandFailed(new IllegalStateException(s"[$traceId] AgentPersistentEntity[$entityId][active] failed due to missing state while handling command: AdvanceAgent()"))
             ctx.done
         }
     }
-    .onCommand[UpdateAgent, Done] {
+    .onCommand[UpdateAgent, CommandReply] {
       case (UpdateAgent(traceId, changeEvent), ctx, _) =>
         log.trace(s"[$traceId] AgentPersistentEntity[$entityId][active] received command: UpdateAgent($changeEvent)")
-        ctx.thenPersist(AgentUpdated(entityId, traceId, changeEvent))(_ => ctx.done)
+        ctx.thenPersist(AgentUpdated(entityId, traceId, changeEvent))(_ => ctx.reply(CommandReply(entityId, traceId, "UpdateAgent")))
     }
-    .onReadOnlyCommand[ReadAgent, ReadAgentResponse] {
+    .onReadOnlyCommand[ReadAgent, ReadReply] {
       case (ReadAgent(traceId), ctx, state) =>
         log.trace(s"[$traceId] AgentPersistentEntity[$entityId][active] received command: ReadAgent()")
         state match {
-          case Some(s) => ReadAgentResponse(entityId, s)
+          case Some(s) => ReadReply(entityId, traceId, s)
           case None =>
             ctx.commandFailed(new IllegalStateException(s"[$traceId] AgentPersistentEntity[$entityId][active] failed due to missing state while handling command: ReadAgent()"))
         }

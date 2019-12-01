@@ -17,14 +17,14 @@ package com.loudflow.model.impl
 
 import play.api.libs.json._
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntity
-import com.loudflow.domain.Message
 import com.loudflow.domain.model._
 import com.loudflow.domain.model.entity.EntityOptions
-import com.loudflow.model.impl.ModelCommand.{CommandReply, ReadReply}
+import com.loudflow.model.impl.ModelCommand.ReadReply
+import com.loudflow.service.Command
+import com.loudflow.service.Command.CommandReply
+import sangria.schema.{Field, ObjectType, StringType, fields}
 
-sealed trait ModelCommand extends Message {
-  def demuxer: String
-}
+sealed trait ModelCommand extends Command
 
 /* ************************************************************************
    CRUD Commands
@@ -119,10 +119,18 @@ object ModelCommand {
     case BatchAction(_, _, actions) => actions.flatMap(fromAction)
   }
 
-  final case class CommandReply(id: String, traceId: String, command: String)
-  object CommandReply { implicit val format: Format[CommandReply] = Json.format }
-
   final case class ReadReply(id: String, traceId: String, state: ModelState)
   object ReadReply { implicit val format: Format[ReadReply] = Json.format }
+
+  val ReadReplyType =
+    ObjectType (
+      "ReadReplyType",
+      "Read command reply.",
+      fields[Unit, ReadReply](
+        Field("id", StringType, description = Some("Persistent entity identifier."), resolve = _.value.id),
+        Field("traceId", StringType, description = Some("Trace identifier."), resolve = _.value.traceId),
+        Field("state", ModelState.SchemaType, description = Some("Model state."), resolve = _.value.state)
+      )
+    )
 
 }

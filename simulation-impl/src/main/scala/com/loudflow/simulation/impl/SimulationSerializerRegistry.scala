@@ -17,11 +17,11 @@ package com.loudflow.simulation.impl
 
 import scala.collection.immutable.Seq
 import com.lightbend.lagom.scaladsl.playjson.{JsonSerializer, JsonSerializerRegistry}
-import com.loudflow.simulation.api.ReadSimulationResponse
+import com.loudflow.simulation.impl.SimulationCommand.ReadReply
 
 object SimulationSerializerRegistry extends JsonSerializerRegistry {
   override def serializers: Seq[JsonSerializer[_]] = Seq(
-    JsonSerializer[ReadSimulationResponse],
+    JsonSerializer[ReadReply],
     JsonSerializer[CreateSimulation],
     JsonSerializer[DestroySimulation],
     JsonSerializer[ReadSimulation],

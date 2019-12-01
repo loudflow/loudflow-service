@@ -17,26 +17,20 @@ package com.loudflow.agent.api
 
 import akka.NotUsed
 import com.lightbend.lagom.scaladsl.api.transport.Method
-import com.lightbend.lagom.scaladsl.api.{Descriptor, ServiceCall, Service}
+import com.lightbend.lagom.scaladsl.api.{Descriptor, Service, ServiceCall}
 import com.lightbend.lagom.scaladsl.api.broker.Topic
-import com.lightbend.lagom.scaladsl.api.broker.kafka.{PartitionKeyStrategy, KafkaProperties}
-import com.loudflow.api.{CommandResponse, HealthResponse}
+import com.lightbend.lagom.scaladsl.api.broker.kafka.{KafkaProperties, PartitionKeyStrategy}
+import com.loudflow.service.{GraphQLRequest, HealthResponse}
 import com.loudflow.domain.model.ModelAction
+import play.api.libs.json.JsValue
 
 trait AgentService extends Service {
 
   import AgentService._
 
   def checkServiceHealth: ServiceCall[NotUsed, HealthResponse]
-  def checkAgentHealth(id: String): ServiceCall[NotUsed, HealthResponse]
-
-  def createAgent: ServiceCall[CreateAgentRequest, CommandResponse]
-  def destroyAgent(id: String): ServiceCall[NotUsed, CommandResponse]
-  def startAgent(id: String): ServiceCall[NotUsed, CommandResponse]
-  def stopAgent(id: String): ServiceCall[NotUsed, CommandResponse]
-  def pauseAgent(id: String): ServiceCall[NotUsed, CommandResponse]
-  def resumeAgent(id: String): ServiceCall[NotUsed, CommandResponse]
-  def readAgent(id: String): ServiceCall[NotUsed, ReadAgentResponse]
+  def getGraphQLQuery(query: String, operationName: Option[String] = None, variables: Option[String] = None): ServiceCall[NotUsed, JsValue]
+  def postGraphQLQuery(query: Option[String] = None, operationName: Option[String] = None, variables: Option[String] = None): ServiceCall[GraphQLRequest, JsValue]
 
   def actionTopic: Topic[ModelAction]
 
@@ -46,14 +40,8 @@ trait AgentService extends Service {
     named(SERVICE_NAME)
       .withCalls(
         restCall(Method.GET, s"$BASE_PATH/health", checkServiceHealth _),
-        restCall(Method.GET, s"$BASE_PATH/:id/health", checkAgentHealth _),
-        restCall(Method.POST, s"$BASE_PATH", createAgent _),
-        restCall(Method.DELETE, s"$BASE_PATH/:id", destroyAgent _),
-        restCall(Method.PATCH, s"$BASE_PATH/:id?action=start", startAgent _),
-        restCall(Method.PATCH, s"$BASE_PATH/:id?action=stop", stopAgent _),
-        restCall(Method.PATCH, s"$BASE_PATH/:id?action=pause", pauseAgent _),
-        restCall(Method.PATCH, s"$BASE_PATH/:id?action=resume", resumeAgent _),
-        restCall(Method.GET, s"$BASE_PATH/:id", readAgent _)
+        restCall(Method.GET, s"$BASE_PATH/graphql?query&operationName&variables", getGraphQLQuery _),
+        restCall(Method.POST, s"$BASE_PATH/graphql?query&operationName&variables", postGraphQLQuery _)
       )
       .withTopics(
         topic(ACTION_TOPIC_NAME, actionTopic _)

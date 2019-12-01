@@ -15,33 +15,32 @@
 ************************************************************************ */
 package com.loudflow.simulation.impl
 
-import akka.Done
 import play.api.libs.json._
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntity
-import com.loudflow.domain.Message
 import com.loudflow.domain.model.{ModelChange, ModelProperties}
-import com.loudflow.domain.simulation.SimulationProperties
-import com.loudflow.simulation.api.ReadSimulationResponse
+import com.loudflow.domain.simulation.{SimulationProperties, SimulationState}
+import com.loudflow.service.Command.CommandReply
+import com.loudflow.service.Command
+import com.loudflow.simulation.impl.SimulationCommand.ReadReply
+import sangria.schema.{Field, ObjectType, StringType, fields}
 
-sealed trait SimulationCommand extends Message {
-  def demuxer: String
-}
+sealed trait SimulationCommand extends Command
 
 /* ************************************************************************
    CRUD Commands
 ************************************************************************ */
 
-final case class CreateSimulation(traceId: String, simulation: SimulationProperties, model: ModelProperties) extends PersistentEntity.ReplyType[Done] with SimulationCommand {
+final case class CreateSimulation(traceId: String, simulation: SimulationProperties, model: ModelProperties) extends PersistentEntity.ReplyType[CommandReply] with SimulationCommand {
   val demuxer = "create-simulation"
 }
 object CreateSimulation { implicit val format: Format[CreateSimulation] = Json.format }
 
-final case class DestroySimulation(traceId: String) extends PersistentEntity.ReplyType[Done] with SimulationCommand {
+final case class DestroySimulation(traceId: String) extends PersistentEntity.ReplyType[CommandReply] with SimulationCommand {
   val demuxer = "destroy-simulation"
 }
 object DestroySimulation { implicit val format: Format[DestroySimulation] = Json.format }
 
-final case class ReadSimulation(traceId: String) extends PersistentEntity.ReplyType[ReadSimulationResponse] with SimulationCommand {
+final case class ReadSimulation(traceId: String) extends PersistentEntity.ReplyType[ReadReply] with SimulationCommand {
   val demuxer = "read-simulation"
 }
 object ReadSimulation { implicit val format: Format[ReadSimulation] = Json.format }
@@ -50,32 +49,32 @@ object ReadSimulation { implicit val format: Format[ReadSimulation] = Json.forma
    Control Commands
 ************************************************************************ */
 
-final case class StartSimulation(traceId: String) extends PersistentEntity.ReplyType[Done] with SimulationCommand {
+final case class StartSimulation(traceId: String) extends PersistentEntity.ReplyType[CommandReply] with SimulationCommand {
   val demuxer = "start-simulation"
 }
 object StartSimulation { implicit val format: Format[StartSimulation] = Json.format }
 
-final case class StopSimulation(traceId: String) extends PersistentEntity.ReplyType[Done] with SimulationCommand {
+final case class StopSimulation(traceId: String) extends PersistentEntity.ReplyType[CommandReply] with SimulationCommand {
   val demuxer = "stop-simulation"
 }
 object StopSimulation { implicit val format: Format[StopSimulation] = Json.format }
 
-final case class PauseSimulation(traceId: String) extends PersistentEntity.ReplyType[Done] with SimulationCommand {
+final case class PauseSimulation(traceId: String) extends PersistentEntity.ReplyType[CommandReply] with SimulationCommand {
   val demuxer = "pause-simulation"
 }
 object PauseSimulation { implicit val format: Format[PauseSimulation] = Json.format }
 
-final case class ResumeSimulation(traceId: String) extends PersistentEntity.ReplyType[Done] with SimulationCommand {
+final case class ResumeSimulation(traceId: String) extends PersistentEntity.ReplyType[CommandReply] with SimulationCommand {
   val demuxer = "resume-simulation"
 }
 object ResumeSimulation { implicit val format: Format[ResumeSimulation] = Json.format }
 
-final case class AdvanceSimulation(traceId: String) extends PersistentEntity.ReplyType[Done] with SimulationCommand {
+final case class AdvanceSimulation(traceId: String) extends PersistentEntity.ReplyType[CommandReply] with SimulationCommand {
   val demuxer = "advance-simulation"
 }
 object AdvanceSimulation { implicit val format: Format[AdvanceSimulation] = Json.format }
 
-final case class UpdateSimulation(traceId: String, change: ModelChange) extends PersistentEntity.ReplyType[Done] with SimulationCommand {
+final case class UpdateSimulation(traceId: String, change: ModelChange) extends PersistentEntity.ReplyType[CommandReply] with SimulationCommand {
   val demuxer = "update-simulation"
 }
 object UpdateSimulation { implicit val format: Format[UpdateSimulation] = Json.format }
@@ -113,4 +112,19 @@ object SimulationCommand {
     }
     jsValue.transform(JsPath.json.update((JsPath \ 'demuxer).json.put(JsString(demuxer)))).get
   }
+
+  final case class ReadReply(id: String, traceId: String, state: SimulationState)
+  object ReadReply { implicit val format: Format[ReadReply] = Json.format }
+
+  val ReadReplyType =
+    ObjectType (
+      "ReadReplyType",
+      "Read command reply.",
+      fields[Unit, ReadReply](
+        Field("id", StringType, description = Some("Persistent entity identifier."), resolve = _.value.id),
+        Field("traceId", StringType, description = Some("Trace identifier."), resolve = _.value.traceId),
+        Field("state", SimulationState.SchemaType, description = Some("Simulation state."), resolve = _.value.state)
+      )
+    )
+
 }

@@ -24,7 +24,8 @@ import com.lightbend.lagom.scaladsl.playjson.JsonSerializerRegistry
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 import org.slf4j.{Logger, LoggerFactory}
 import com.loudflow.domain.model.{GraphProperties, GridProperties, ModelProperties, ModelType}
-import com.loudflow.model.impl.ModelCommand.{CommandReply, ReadReply}
+import com.loudflow.model.impl.ModelCommand.ReadReply
+import com.loudflow.service.Command.CommandReply
 
 class ModelPersistentEntityTest extends WordSpecLike with Matchers with BeforeAndAfterAll {
 

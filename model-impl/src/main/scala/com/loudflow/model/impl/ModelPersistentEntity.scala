@@ -18,7 +18,8 @@ package com.loudflow.model.impl
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntity
 import org.slf4j.{Logger, LoggerFactory}
 import com.loudflow.domain.model.ModelState
-import com.loudflow.model.impl.ModelCommand.{CommandReply, ReadReply}
+import com.loudflow.model.impl.ModelCommand.ReadReply
+import com.loudflow.service.Command.CommandReply
 
 class ModelPersistentEntity extends PersistentEntity {
 

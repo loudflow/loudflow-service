@@ -21,6 +21,7 @@ import com.loudflow.domain.model.entity._
 import com.loudflow.domain.model.graph.GraphHelper._
 import com.loudflow.util.shuffle
 import org.slf4j.{Logger, LoggerFactory}
+import sangria.schema.{Field, ListType, LongType, ObjectType, StringType, fields, interfaces}
 
 final case class GraphModelState(id: String, properties: ModelProperties, seed: Long, graph: Graph = emptyGraph) extends ModelState {
   val demuxer = "graph"
@@ -64,6 +65,20 @@ object GraphModelState {
   )
 
   implicit val format: Format[GraphModelState] = Format(reads, writes)
+
+  val SchemaType =
+    ObjectType (
+      "GraphModelStateType",
+      "Graph model state.",
+      interfaces[Unit, GraphModelState](ModelState.SchemaType),
+      fields[Unit, GraphModelState](
+        Field("id", StringType, description = Some("Graph model identifier."), resolve = _.value.id),
+        Field("seed", LongType, description = Some("Graph model seed."), resolve = _.value.seed),
+        Field("properties", ModelProperties.SchemaType, description = Some("Graph model properties."), resolve = _.value.properties),
+        Field("entities", ListType(Entity.SchemaType), description = Some("Graph model entities."), resolve = _.value.entities.toSeq),
+        Field("positions", ListType(Position.SchemaType), description = Some("Graph model positions."), resolve = _.value.positions.toSeq)
+      )
+    )
 
   def apply(id: String, properties: ModelProperties): GraphModelState = new GraphModelState(id, properties, properties.seed)
 

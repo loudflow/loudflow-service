@@ -17,26 +17,20 @@ package com.loudflow.simulation.api
 
 import akka.NotUsed
 import com.lightbend.lagom.scaladsl.api.transport.Method
-import com.lightbend.lagom.scaladsl.api.{Descriptor, ServiceCall, Service}
+import com.lightbend.lagom.scaladsl.api.{Descriptor, Service, ServiceCall}
 import com.lightbend.lagom.scaladsl.api.broker.Topic
-import com.lightbend.lagom.scaladsl.api.broker.kafka.{PartitionKeyStrategy, KafkaProperties}
-import com.loudflow.api.{CommandResponse, HealthResponse}
+import com.lightbend.lagom.scaladsl.api.broker.kafka.{KafkaProperties, PartitionKeyStrategy}
+import com.loudflow.service.{GraphQLRequest, HealthResponse}
 import com.loudflow.domain.model.ModelAction
+import play.api.libs.json.JsValue
 
 trait SimulationService extends Service {
 
   import SimulationService._
 
   def checkServiceHealth: ServiceCall[NotUsed, HealthResponse]
-  def checkSimulationHealth(id: String): ServiceCall[NotUsed, HealthResponse]
-
-  def createSimulation: ServiceCall[CreateSimulationRequest, CommandResponse]
-  def destroySimulation(id: String): ServiceCall[NotUsed, CommandResponse]
-  def startSimulation(id: String): ServiceCall[NotUsed, CommandResponse]
-  def stopSimulation(id: String): ServiceCall[NotUsed, CommandResponse]
-  def pauseSimulation(id: String): ServiceCall[NotUsed, CommandResponse]
-  def resumeSimulation(id: String): ServiceCall[NotUsed, CommandResponse]
-  def readSimulation(id: String): ServiceCall[NotUsed, ReadSimulationResponse]
+  def getGraphQLQuery(query: String, operationName: Option[String] = None, variables: Option[String] = None): ServiceCall[NotUsed, JsValue]
+  def postGraphQLQuery(query: Option[String] = None, operationName: Option[String] = None, variables: Option[String] = None): ServiceCall[GraphQLRequest, JsValue]
 
   def actionTopic: Topic[ModelAction]
 
@@ -46,14 +40,8 @@ trait SimulationService extends Service {
     named(SERVICE_NAME)
       .withCalls(
         restCall(Method.GET, s"$BASE_PATH/health", checkServiceHealth _),
-        restCall(Method.GET, s"$BASE_PATH/:id/health", checkSimulationHealth _),
-        restCall(Method.POST, s"$BASE_PATH", createSimulation _),
-        restCall(Method.DELETE, s"$BASE_PATH/:id", destroySimulation _),
-        restCall(Method.PATCH, s"$BASE_PATH/:id?action=start", startSimulation _),
-        restCall(Method.PATCH, s"$BASE_PATH/:id?action=stop", stopSimulation _),
-        restCall(Method.PATCH, s"$BASE_PATH/:id?action=pause", pauseSimulation _),
-        restCall(Method.PATCH, s"$BASE_PATH/:id?action=resume", resumeSimulation _),
-        restCall(Method.GET, s"$BASE_PATH/:id", readSimulation _)
+        restCall(Method.GET, s"$BASE_PATH/graphql?query&operationName&variables", getGraphQLQuery _),
+        restCall(Method.POST, s"$BASE_PATH/graphql?query&operationName&variables", postGraphQLQuery _)
       )
       .withTopics(
         topic(ACTION_TOPIC_NAME, actionTopic _)
