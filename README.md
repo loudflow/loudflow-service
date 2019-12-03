@@ -1,11 +1,3 @@
-<!-- PROJECT SHIELDS -->
-<!--
-*** I'm using markdown "reference style" links for readability.
-*** Reference links are enclosed in brackets [ ] instead of parentheses ( ).
-*** See the bottom of this document for the declaration of the reference variables
-*** for contributors-url, forks-url, etc. This is an optional, concise syntax you may use.
-*** https://www.markdownguide.org/basic-syntax/#reference-style-links
--->
 [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
@@ -23,10 +15,10 @@
   <p align="center">
     A platform for developing multi-agent systems.
     <br />
-    <a href="https://github.com/loudflow/loudflow-service"><strong>Explore the docs »</strong></a>
+    <a href="https://github.com/loudflow/loudflow-service/wiki"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/loudflow/loudflow-service">View Demo</a>
+    <a href="https://loudflow.com">View Demo</a>
     ·
     <a href="https://github.com/loudflow/loudflow-service/issues">Report Bug</a>
     ·
@@ -53,7 +45,7 @@
 
 [![Architecture][architecture]](https://loudflow.com)
 
-This project is currently under construction and not ready for usage. Please stay tuned for updates. 
+This project is under construction and not ready for usage. Please stay tuned for updates. 
 
 ### Built With
 
@@ -137,7 +129,7 @@ Project Link: [https://github.com/loudflow/loudflow-service](https://github.com/
 [issues-shield]: https://img.shields.io/github/issues/loudflow/loudflow-service.svg?style=flat-square
 [issues-url]: https://github.com/loudflow/loudflow-service/issues
 [license-shield]: https://img.shields.io/github/license/loudflow/loudflow-service.svg?style=flat-square
-[license-url]: https://github.com/loudflow/loudflow-service/blob/master/LICENSE
+[license-url]: https://github.com/loudflow/loudflow-service/blob/master/LICENSE.txt
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=flat-square&logo=linkedin&colorB=555
 [linkedin-url]: https://linkedin.com/company/farsimple
 [architecture]: images/architecture.png
