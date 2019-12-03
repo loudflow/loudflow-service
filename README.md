@@ -104,7 +104,7 @@ npm install
 
 Use this space to show useful examples of how a project can be used. Additional screenshots, code examples and demos work well in this space. You may also link to more resources.
 
-_For more examples, please refer to the [Documentation](https://example.com)_
+_For more examples, please refer to the [Documentation](https://example.com)
 
 
 
@@ -128,7 +128,7 @@ Contributions are what make the open source community such an amazing place to b
 
 
 
-<!-- LICENSE.txt -->
+<!-- LICENSE -->
 ## License
 
 Distributed under the MIT License. See `LICENSE` for more information.
@@ -138,9 +138,9 @@ Distributed under the MIT License. See `LICENSE` for more information.
 <!-- CONTACT -->
 ## Contact
 
-Your Name - [@twitter_handle](https://twitter.com/twitter_handle) - email
+Sinan Inel - info@loudflow.com
 
-Project Link: [https://github.com/github_username/repo](https://github.com/github_username/repo)
+Project Link: [https://github.com/loudflow/loudflow-service](https://github.com/loudflow/loudflow-service)
 
 
 
@@ -166,7 +166,7 @@ Project Link: [https://github.com/github_username/repo](https://github.com/githu
 [issues-shield]: https://img.shields.io/github/issues/loudflow/loudflow-service.svg?style=flat-square
 [issues-url]: https://github.com/loudflow/loudflow-service/issues
 [license-shield]: https://img.shields.io/github/license/loudflow/loudflow-service.svg?style=flat-square
-[license-url]: https://github.com/loudflow/loudflow-service/LICENSE.txt
+[license-url]: https://github.com/loudflow/loudflow-service/LICENSE
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=flat-square&logo=linkedin&colorB=555
 [linkedin-url]: https://linkedin.com/company/farsimple
 [architecture]: images/architecture.png
