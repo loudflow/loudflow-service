@@ -166,7 +166,7 @@ Project Link: [https://github.com/loudflow/loudflow-service](https://github.com/
 [issues-shield]: https://img.shields.io/github/issues/loudflow/loudflow-service.svg?style=flat-square
 [issues-url]: https://github.com/loudflow/loudflow-service/issues
 [license-shield]: https://img.shields.io/github/license/loudflow/loudflow-service.svg?style=flat-square
-[license-url]: https://github.com/loudflow/loudflow-service/LICENSE
+[license-url]: https://github.com/loudflow/loudflow-service/blob/master/LICENSE
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=flat-square&logo=linkedin&colorB=555
 [linkedin-url]: https://linkedin.com/company/farsimple
 [architecture]: images/architecture.png
