@@ -9,7 +9,7 @@
 <br />
 <p align="center">
   <a href="https://github.com/github_username/repo">
-    <img src="images/logo.png" alt="Logo" height="80">
+    <img src="images/logo.png" alt="Logo" height="150">
   </a>
 
   <p align="center">
