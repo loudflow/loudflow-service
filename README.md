@@ -114,7 +114,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 <!-- CONTACT -->
 ## Contact
 
-Sinan Inel - info@loudflow.com
+info@loudflow.com
 
 Project Link: [https://github.com/loudflow/loudflow-service](https://github.com/loudflow/loudflow-service)
 
