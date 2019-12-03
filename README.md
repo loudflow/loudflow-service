@@ -168,5 +168,5 @@ Project Link: [https://github.com/github_username/repo](https://github.com/githu
 [license-shield]: https://img.shields.io/github/license/loudflow/loudflow-service.svg?style=flat-square
 [license-url]: https://github.com/loudflow/loudflow-service/blob/master/LICENSE.txt
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=flat-square&logo=linkedin&colorB=555
-[linkedin-url]: https://linkedin.com/in/farsimple
+[linkedin-url]: https://linkedin.com/company/farsimple
 [architecture]: images/architecture.png
