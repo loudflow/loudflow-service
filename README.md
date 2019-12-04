@@ -6,7 +6,7 @@
 [![LinkedIn][linkedin-shield]][linkedin-url]
 
 <!-- PROJECT LOGO -->
-<div style="text-align:center;">
+<p align="center">
     <a href="https://loudflow.github.io/">
         <img src="images/logo.png" alt="Logo" height="150">
     </a>
@@ -20,7 +20,7 @@
     <a href="https://github.com/loudflow/loudflow-service/issues">Report Bug</a>
     ·
     <a href="https://github.com/loudflow/loudflow-service/issues">Request Feature</a>
-</div>
+</p>
 
 <!-- TABLE OF CONTENTS -->
 ## Table of Contents
