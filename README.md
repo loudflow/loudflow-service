@@ -6,23 +6,23 @@
 [![LinkedIn][linkedin-shield]][linkedin-url]
 
 <!-- PROJECT LOGO -->
-<br />
-<p style="text-align:center">
+<div style="text-align:center">
     <a href="https://loudflow.github.io/">
         <img src="images/logo.png" alt="Logo" height="150">
     </a>
-    <br />
-    A platform for developing multi-agent systems.
-    <br />
-    <a href="https://github.com/loudflow/loudflow-service/wiki"><strong>Explore the docs »</strong></a>
-    <br />
-    <br />
-    <a href="https://loudflow.github.io/">View Demo</a>
-    ·
-    <a href="https://github.com/loudflow/loudflow-service/issues">Report Bug</a>
-    ·
-    <a href="https://github.com/loudflow/loudflow-service/issues">Request Feature</a>
-</p>
+    <div style="text-align:center">
+        A platform for developing multi-agent systems.
+        <br />
+        <a href="https://github.com/loudflow/loudflow-service/wiki"><strong>Explore the docs »</strong></a>
+        <br />
+        <br />
+        <a href="https://loudflow.github.io/">View Demo</a>
+        ·
+        <a href="https://github.com/loudflow/loudflow-service/issues">Report Bug</a>
+        ·
+        <a href="https://github.com/loudflow/loudflow-service/issues">Request Feature</a>
+    </div>
+</div>
 
 <!-- TABLE OF CONTENTS -->
 ## Table of Contents
