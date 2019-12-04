@@ -10,16 +10,18 @@
     <a href="https://loudflow.github.io/">
         <img src="images/logo.png" alt="Logo" height="150">
     </a>
-    A platform for developing multi-agent systems.
-    <br />
-    <a href="https://github.com/loudflow/loudflow-service/wiki"><strong>Explore the docs »</strong></a>
-    <br />
-    <br />
-    <a href="https://loudflow.github.io/">View Demo</a>
-    ·
-    <a href="https://github.com/loudflow/loudflow-service/issues">Report Bug</a>
-    ·
-    <a href="https://github.com/loudflow/loudflow-service/issues">Request Feature</a>
+    <p align="center">
+        A platform for developing multi-agent systems.
+        <br />
+        <a href="https://github.com/loudflow/loudflow-service/wiki"><strong>Explore the docs »</strong></a>
+        <br />
+        <br />
+        <a href="https://loudflow.github.io/">View Demo</a>
+        ·
+        <a href="https://github.com/loudflow/loudflow-service/issues">Report Bug</a>
+        ·
+        <a href="https://github.com/loudflow/loudflow-service/issues">Request Feature</a>
+    </p>
 </p>
 
 <!-- TABLE OF CONTENTS -->
