@@ -23,12 +23,12 @@ import com.lightbend.lagom.scaladsl.testkit.ServiceTest
 import com.loudflow.service.{GraphQLRequest, HealthResponse}
 import com.loudflow.domain.model.{GraphProperties, GridProperties, ModelProperties, ModelType}
 import com.loudflow.model.api.ModelService
-import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json.Json
+import com.typesafe.scalalogging.Logger
 
 class ModelServiceImplTest extends AsyncWordSpec with Matchers with BeforeAndAfterAll {
 
-  private final val log: Logger = LoggerFactory.getLogger(classOf[ModelServiceImplTest])
+  private final val log = Logger[ModelServiceImplTest]
 
   private val server = ServiceTest.startServer(ServiceTest.defaultSetup.withCassandra()) { ctx =>
     new ModelApplication(ctx) with LocalServiceLocator // with TestTopicComponents

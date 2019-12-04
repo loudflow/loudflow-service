@@ -22,14 +22,14 @@ import akka.testkit.TestKit
 import com.lightbend.lagom.scaladsl.testkit.PersistentEntityTestDriver
 import com.lightbend.lagom.scaladsl.playjson.JsonSerializerRegistry
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
-import org.slf4j.{Logger, LoggerFactory}
 import com.loudflow.domain.model.{GraphProperties, GridProperties, ModelProperties, ModelType}
 import com.loudflow.model.impl.ModelCommand.ReadReply
 import com.loudflow.service.Command.CommandReply
+import com.typesafe.scalalogging.Logger
 
 class ModelPersistentEntityTest extends WordSpecLike with Matchers with BeforeAndAfterAll {
 
-  private final val log: Logger = LoggerFactory.getLogger(classOf[ModelPersistentEntityTest])
+  private final val log = Logger[ModelPersistentEntityTest]
 
   private val system = ActorSystem("GraphModelPersistentEntityTest", JsonSerializerRegistry.actorSystemSetupFor(ModelSerializerRegistry))
 

@@ -24,12 +24,12 @@ import com.loudflow.domain.simulation.SimulationProperties
 import com.loudflow.service.{GraphQLRequest, HealthResponse}
 import com.loudflow.simulation.api.SimulationService
 import org.scalatest.{AsyncWordSpec, BeforeAndAfterAll, Matchers}
-import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json.Json
+import com.typesafe.scalalogging.Logger
 
 class SimulationServiceImplTest extends AsyncWordSpec with Matchers with BeforeAndAfterAll {
 
-  private final val log: Logger = LoggerFactory.getLogger(classOf[SimulationServiceImplTest])
+  private final val log = Logger[SimulationServiceImplTest]
 
   private val server = ServiceTest.startServer(ServiceTest.defaultSetup.withCassandra()) { ctx =>
     new SimulationApplication(ctx) with LocalServiceLocator

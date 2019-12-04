@@ -20,20 +20,20 @@ import java.util.UUID
 import com.loudflow.domain.model.entity.{Entity, EntityOptions}
 import com.loudflow.domain.model.graph.{GraphHelper, GraphModelState}
 import org.scalatest.{BeforeAndAfter, FunSuite}
-import org.slf4j.{Logger, LoggerFactory}
+import com.typesafe.scalalogging.Logger
 
 class GraphModelStateTest extends FunSuite with BeforeAndAfter {
 
-  // private final val log: Logger = LoggerFactory.getLogger(classOf[GraphModelStateTest])
+  private final val log = Logger[GraphModelStateTest]
 
   val id: String = UUID.randomUUID().toString
   val xCount = 10
   val yCount = 10
-  val gridProperties = GridProperties(xCount, yCount)
-  val graphProperties = GraphProperties(Some(gridProperties))
-  val modelProperties = ModelProperties(ModelType.GRAPH, Some(graphProperties))
+  val gridProperties: GridProperties = GridProperties(xCount, yCount)
+  val graphProperties: GraphProperties = GraphProperties(Some(gridProperties))
+  val modelProperties: ModelProperties = ModelProperties(ModelType.GRAPH, Some(graphProperties))
 
-  val entity0 = Entity("agent::random", EntityOptions())
+  val entity0: Entity = Entity("agent::random", EntityOptions())
 
   def asciiMapper(entity: Option[Entity]): String = entity match {
     case Some(e) => e.kind match {

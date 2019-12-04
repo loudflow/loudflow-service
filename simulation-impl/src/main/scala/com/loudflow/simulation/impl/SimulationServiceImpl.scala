@@ -34,8 +34,6 @@ import com.lightbend.lagom.scaladsl.server.ServerServiceCall
 import com.loudflow.domain.model.graph.GraphModelState
 import com.loudflow.domain.simulation.SimulationProperties
 import com.loudflow.service.{Command, GraphQLRequest, HealthResponse}
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import play.api.libs.json.{Format, JsObject, JsValue, Json}
 import sangria.execution.{ErrorWithResolver, Executor, QueryAnalysisError}
 import sangria.parser.QueryParser
@@ -44,10 +42,11 @@ import sangria.marshalling.playJson._
 
 import scala.collection.immutable
 import scala.util.{Failure, Success}
+import com.typesafe.scalalogging.Logger
 
 class SimulationServiceImpl(modelService: ModelService, persistentEntityRegistry: PersistentEntityRegistry)(implicit ec: ExecutionContext) extends SimulationService {
 
-  private final val log: Logger = LoggerFactory.getLogger(classOf[SimulationServiceImpl])
+  private final val log = Logger[SimulationServiceImpl]
 
   modelService.changeTopic.subscribe.atLeastOnce(
     Flow.fromFunction(change => {
@@ -57,7 +56,7 @@ class SimulationServiceImpl(modelService: ModelService, persistentEntityRegistry
     })
   )
 
-  override def checkServiceHealth = ServiceCall { _ =>
+  override def checkServiceHealth: ServiceCall[NotUsed, HealthResponse] = ServiceCall { _ =>
     Future.successful(HealthResponse("simulation"))
   }
 

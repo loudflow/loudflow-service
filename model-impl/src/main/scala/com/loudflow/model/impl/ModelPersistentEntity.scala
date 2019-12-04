@@ -16,14 +16,14 @@
 package com.loudflow.model.impl
 
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntity
-import org.slf4j.{Logger, LoggerFactory}
 import com.loudflow.domain.model.ModelState
 import com.loudflow.model.impl.ModelCommand.ReadReply
 import com.loudflow.service.Command.CommandReply
+import com.typesafe.scalalogging.Logger
 
 class ModelPersistentEntity extends PersistentEntity {
 
-  final val log: Logger = LoggerFactory.getLogger(classOf[ModelPersistentEntity])
+  final val log = Logger[ModelPersistentEntity]
 
   override type Command = ModelCommand
   override type Event = ModelEvent

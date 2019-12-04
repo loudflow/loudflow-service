@@ -24,12 +24,12 @@ import com.loudflow.agent.api.AgentService
 import com.loudflow.domain.agent.{AgentProperties, AgentType}
 import com.loudflow.domain.model.{GraphProperties, GridProperties, ModelProperties, ModelType}
 import com.loudflow.service.{GraphQLRequest, HealthResponse}
-import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json.Json
+import com.typesafe.scalalogging.Logger
 
 class AgentServiceImplTest extends AsyncWordSpec with Matchers with BeforeAndAfterAll {
 
-  private final val log: Logger = LoggerFactory.getLogger(classOf[AgentServiceImplTest])
+  private final val log = Logger[AgentServiceImplTest]
 
   private val server = ServiceTest.startServer(ServiceTest.defaultSetup.withCassandra()) { ctx =>
     new AgentApplication(ctx) with LocalServiceLocator

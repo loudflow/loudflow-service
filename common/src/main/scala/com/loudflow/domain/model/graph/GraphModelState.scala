@@ -20,8 +20,8 @@ import com.loudflow.domain.model._
 import com.loudflow.domain.model.entity._
 import com.loudflow.domain.model.graph.GraphHelper._
 import com.loudflow.util.shuffle
-import org.slf4j.{Logger, LoggerFactory}
 import sangria.schema.{Field, ListType, LongType, ObjectType, StringType, fields, interfaces}
+import com.typesafe.scalalogging.Logger
 
 final case class GraphModelState(id: String, properties: ModelProperties, seed: Long, graph: Graph = emptyGraph) extends ModelState {
   val demuxer = "graph"
@@ -40,7 +40,7 @@ final case class GraphModelState(id: String, properties: ModelProperties, seed: 
 
 object GraphModelState {
 
-  private final val log: Logger = LoggerFactory.getLogger("GraphModelState")
+  private final val log = Logger("GraphModelState")
 
   implicit val reads: Reads[GraphModelState] = (json: JsValue) => {
     val id = (json \ "id").as[String]
@@ -66,7 +66,7 @@ object GraphModelState {
 
   implicit val format: Format[GraphModelState] = Format(reads, writes)
 
-  val SchemaType =
+  val SchemaType: ObjectType[Unit, GraphModelState] =
     ObjectType (
       "GraphModelStateType",
       "Graph model state.",

@@ -21,14 +21,14 @@ import com.loudflow.domain.model._
 import com.loudflow.domain.simulation.SimulationState
 import com.loudflow.service.Command.CommandReply
 import com.loudflow.simulation.impl.SimulationCommand.ReadReply
-import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.{Duration, MILLISECONDS}
+import com.typesafe.scalalogging.Logger
 
 class SimulationPersistentEntity()(implicit val persistentEntityRegistry: PersistentEntityRegistry, val system: ActorSystem, val ec: ExecutionContext) extends PersistentEntity {
 
-  final val log: Logger = LoggerFactory.getLogger(classOf[SimulationPersistentEntity])
+  final val log = Logger[SimulationPersistentEntity]
   private final val ref: PersistentEntityRef[SimulationCommand] = persistentEntityRegistry.refFor[SimulationPersistentEntity](entityId)
   private var clock: Option[Cancellable] = None
 

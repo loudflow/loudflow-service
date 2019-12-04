@@ -47,7 +47,7 @@ import scala.util.{Failure, Success}
 
 class AgentServiceImpl(modelService: ModelService, persistentEntityRegistry: PersistentEntityRegistry)(implicit ec: ExecutionContext) extends AgentService {
 
-  private final val log: Logger = LoggerFactory.getLogger(classOf[AgentServiceImpl])
+  private final val log = LoggerFactory.getLogger(classOf[AgentServiceImpl])
 
   modelService.changeTopic.subscribe.atLeastOnce(
     Flow.fromFunction(change => {
@@ -57,7 +57,7 @@ class AgentServiceImpl(modelService: ModelService, persistentEntityRegistry: Per
     })
   )
 
-  override def checkServiceHealth = ServiceCall { _ =>
+  override def checkServiceHealth: ServiceCall[NotUsed, HealthResponse] = ServiceCall { _ =>
     Future.successful(HealthResponse("agent"))
   }
 

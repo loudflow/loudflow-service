@@ -22,11 +22,11 @@ import cats.effect.IO
 import com.loudflow.domain.model._
 import com.loudflow.domain.model.entity.Entity
 import com.loudflow.util.DoubleSpan
-import org.slf4j.{Logger, LoggerFactory}
+import com.typesafe.scalalogging.Logger
 
 object GraphHelper {
 
-  // private final val log: Logger = LoggerFactory.getLogger("GraphLogic")
+  private final val log = Logger("GraphLogic")
 
   /* ************************************************************************
      DEFINITIONS

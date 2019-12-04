@@ -43,7 +43,7 @@ import scala.util.{Failure, Success}
 
 class ModelServiceImpl(simulationService: SimulationService, persistentEntityRegistry: PersistentEntityRegistry)(implicit ec: ExecutionContext) extends ModelService {
 
-  private final val log: Logger = LoggerFactory.getLogger(classOf[ModelServiceImpl])
+  private final val log = LoggerFactory.getLogger(classOf[ModelServiceImpl])
 
   persistentEntityRegistry.register(new ModelPersistentEntity)
 
@@ -57,7 +57,7 @@ class ModelServiceImpl(simulationService: SimulationService, persistentEntityReg
     })
   )
 
-  override def checkServiceHealth = ServiceCall { _ =>
+  override def checkServiceHealth: ServiceCall[NotUsed, HealthResponse] = ServiceCall { _ =>
     Future.successful(HealthResponse("model"))
   }
 

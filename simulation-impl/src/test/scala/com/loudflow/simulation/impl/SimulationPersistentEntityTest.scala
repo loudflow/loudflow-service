@@ -27,13 +27,13 @@ import com.loudflow.domain.model.{GraphProperties, GridProperties, ModelProperti
 import com.loudflow.domain.simulation.SimulationProperties
 import com.loudflow.service.Command.CommandReply
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
-import org.slf4j.{Logger, LoggerFactory}
+import com.typesafe.scalalogging.Logger
 
 import scala.concurrent.ExecutionContext
 
 class SimulationPersistentEntityTest(implicit ec: ExecutionContext) extends WordSpecLike with Matchers with BeforeAndAfterAll {
 
-  private final val log: Logger = LoggerFactory.getLogger(classOf[SimulationPersistentEntityTest])
+  private final val log = Logger[SimulationPersistentEntityTest]
 
   private implicit val system: ActorSystem = ActorSystem("SimulationPersistentEntityTest", JsonSerializerRegistry.actorSystemSetupFor(SimulationSerializerRegistry))
   private val server = ServiceTest.startServer(ServiceTest.defaultSetup.withCassandra()) { ctx =>

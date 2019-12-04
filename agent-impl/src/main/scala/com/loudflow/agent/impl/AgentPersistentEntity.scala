@@ -21,14 +21,14 @@ import com.loudflow.agent.impl.AgentCommand.ReadReply
 import com.loudflow.domain.agent.AgentState
 import com.loudflow.domain.model._
 import com.loudflow.service.Command.CommandReply
-import org.slf4j.{Logger, LoggerFactory}
+import com.typesafe.scalalogging.Logger
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.{Duration, MILLISECONDS}
 
 class AgentPersistentEntity(implicit val persistentEntityRegistry: PersistentEntityRegistry, val system: ActorSystem, val ec: ExecutionContext) extends PersistentEntity {
 
-  final val log: Logger = LoggerFactory.getLogger(classOf[AgentPersistentEntity])
+  final val log = Logger[AgentPersistentEntity]
   private final val ref: PersistentEntityRef[AgentCommand] = persistentEntityRegistry.refFor[AgentPersistentEntity](entityId)
   private var clock: Option[Cancellable] = None
 

@@ -28,11 +28,11 @@ import com.loudflow.domain.agent.{AgentProperties, AgentType}
 import com.loudflow.domain.model.{GraphProperties, GridProperties, ModelProperties, ModelType}
 import com.loudflow.service.Command.CommandReply
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
-import org.slf4j.{Logger, LoggerFactory}
+import com.typesafe.scalalogging.Logger
 
 class AgentPersistentEntityTest(implicit ec: ExecutionContext) extends WordSpecLike with Matchers with BeforeAndAfterAll {
 
-  private final val log: Logger = LoggerFactory.getLogger(classOf[AgentPersistentEntityTest])
+  private final val log = Logger[AgentPersistentEntityTest]
 
   private implicit val system: ActorSystem = ActorSystem("SimulationPersistentEntityTest", JsonSerializerRegistry.actorSystemSetupFor(AgentSerializerRegistry))
   private val server = ServiceTest.startServer(ServiceTest.defaultSetup.withCassandra()) { ctx =>
