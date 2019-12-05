@@ -71,19 +71,15 @@ To download and run this project, you will need:
 
 ### Installation
 
-Choose a location on your file system for the loudflow-service project.
- 
-1. Open a console and change into the directory you selected for your project.
+1. Choose a location on your file system for the loudflow-service project. Open a console and change into the directory you selected for your project.
 
 2. Enter the following command to create a local clone of the project.
 
 ```sh
 git clone https://github.com/loudflow/loudflow-service.git
-```
+``` 
 
-Lagom includes a development environment which lets you start all your services by simply typing runAll in the sbt console. 
-
-3. To run loudflow-service locally in development mode, change directories to the top-level directory and start sbt. When the command prompt displays, invoke runAll. For example:
+3. Lagom includes a development environment which lets you start all your services by simply typing runAll in the sbt console. To run loudflow-service locally in development mode, change directories to the top-level directory and start sbt. When the command prompt displays, invoke runAll. For example:
 
 ```sh
 cd hello
@@ -98,7 +94,7 @@ It will take a bit of time to build the project and start the services. When  yo
 (Services started, press enter to stop and go back to the console...)
 ```
 
-You can now invoke a lopudflow-service endpoint from any HTTP client, such as a browser or curl. See below for usage examples.
+You can now invoke a loudflow-service endpoint from any HTTP client, such as a browser or curl. See below for usage examples.
 
 <!-- USAGE EXAMPLES -->
 ## Usage
