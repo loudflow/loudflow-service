@@ -55,7 +55,7 @@ class SimulationPersistentEntityTest(implicit ec: ExecutionContext) extends Word
 
     "handle CreateSimulation command" in {
       val id = UUID.randomUUID().toString
-      val driver = new PersistentEntityTestDriver(system, new SimulationPersistentEntity(), id)
+      val driver = new PersistentEntityTestDriver(system, new SimulationPersistentEntity(registry, system), id)
       val created = driver.run(CreateSimulation(traceId, simulationProperties, modelProperties))
       log.debug(s"CREATED: ${created.replies}")
       created.replies should be(Seq(CommandReply(id, traceId, "CreateModel")))

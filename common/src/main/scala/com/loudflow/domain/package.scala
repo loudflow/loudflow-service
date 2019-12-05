@@ -4,6 +4,6 @@ import sangria.schema.{Argument, StringType}
 
 package object domain {
 
-  val IdSchemaInputType = Argument("id", StringType, description = "Identifier")
+  val IdSchemaInputType: Argument[String] = Argument("id", StringType, description = "Identifier")
 
 }

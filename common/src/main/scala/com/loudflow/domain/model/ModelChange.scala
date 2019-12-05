@@ -33,7 +33,7 @@ final case class ModelCreatedChange(modelId: String, traceId: String, properties
 }
 object ModelCreatedChange {
   implicit val format: Format[ModelCreatedChange] = Json.format
-  val SchemaType =
+  val SchemaType: ObjectType[Unit, ModelCreatedChange] =
     ObjectType (
       "ModelCreatedChangeType",
       "Model created change message.",
@@ -61,7 +61,7 @@ final case class ModelDestroyedChange(modelId: String, traceId: String) extends 
 }
 object ModelDestroyedChange {
   implicit val format: Format[ModelDestroyedChange] = Json.format
-  val SchemaType =
+  val SchemaType: ObjectType[Unit, ModelDestroyedChange] =
     ObjectType (
       "ModelDestroyedChangeType",
       "Model destroyed change message.",
@@ -87,7 +87,7 @@ final case class EntityAddedChange(modelId: String, traceId: String, kind: Strin
 }
 object EntityAddedChange {
   implicit val format: Format[EntityAddedChange] = Json.format
-  val SchemaType =
+  val SchemaType: ObjectType[Unit, EntityAddedChange] =
     ObjectType (
       "EntityAddedChangeType",
       "Entity added change message.",
@@ -119,7 +119,7 @@ final case class EntityRemovedChange(modelId: String, traceId: String, entityId:
 }
 object EntityRemovedChange {
   implicit val format: Format[EntityRemovedChange] = Json.format
-  val SchemaType =
+  val SchemaType: ObjectType[Unit, EntityRemovedChange] =
     ObjectType (
       "EntityRemovedChangeType",
       "Entity removed change message.",
@@ -147,7 +147,7 @@ final case class EntityMovedChange(modelId: String, traceId: String, entityId: S
 }
 object EntityMovedChange {
   implicit val format: Format[EntityMovedChange] = Json.format
-  val SchemaType =
+  val SchemaType: ObjectType[Unit, EntityMovedChange] =
     ObjectType (
       "EntityMovedChangeType",
       "Entity moved change message.",
@@ -177,7 +177,7 @@ final case class EntityPickedChange(modelId: String, traceId: String, entityId: 
 }
 object EntityPickedChange {
   implicit val format: Format[EntityPickedChange] = Json.format
-  val SchemaType =
+  val SchemaType: ObjectType[Unit, EntityPickedChange] =
     ObjectType (
       "EntityPickedChangeType",
       "Entity picked change message.",
@@ -207,7 +207,7 @@ final case class EntityDroppedChange(modelId: String, traceId: String, entityId:
 }
 object EntityDroppedChange {
   implicit val format: Format[EntityDroppedChange] = Json.format
-  val SchemaType =
+  val SchemaType: ObjectType[Unit, EntityDroppedChange] =
     ObjectType (
       "EntityDroppedChangeType",
       "Entity dropped change message.",
@@ -261,7 +261,7 @@ object ModelChange {
     }
     jsValue.transform(JsPath.json.update((JsPath \ 'demuxer).json.put(JsString(demuxer)))).get
   }
-  val SchemaType =
+  val SchemaType: InterfaceType[Unit, ModelChange] =
     InterfaceType (
       "ModelChangeType",
       "Model change message.",

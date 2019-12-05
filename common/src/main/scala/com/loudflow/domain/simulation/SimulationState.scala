@@ -27,7 +27,7 @@ final case class SimulationState(properties: SimulationProperties, seed: Long, m
 }
 object SimulationState {
   implicit val format: Format[SimulationState] = Json.format
-  val SchemaType =
+  val SchemaType: ObjectType[Unit, SimulationState] =
     ObjectType (
       "SimulationStateType",
       "Simulation state.",

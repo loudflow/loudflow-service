@@ -15,6 +15,7 @@
 ************************************************************************ */
 package com.loudflow.domain.simulation
 
+import com.loudflow.domain.simulation
 import play.api.libs.json._
 import com.loudflow.util.randomSeed
 import sangria.schema.{EnumType, EnumValue, Field, InputField, InputObjectType, IntType, LongType, ObjectType, fields}
@@ -25,7 +26,7 @@ final case class SimulationProperties(time: TimeSystem.Value = TimeSystem.EVENT,
 }
 object SimulationProperties {
   implicit val format: Format[SimulationProperties] = Json.format
-  val SchemaType =
+  val SchemaType: ObjectType[Unit, SimulationProperties] =
     ObjectType (
       "SimulationPropertiesType",
       "Simulation properties.",
@@ -55,7 +56,7 @@ object TimeSystem extends Enumeration {
   val EVENT: TimeSystem.Value = Value
   val TURN: TimeSystem.Value = Value
   implicit val format: Format[TimeSystem.Value] = Json.formatEnum(this)
-  val SchemaType =
+  val SchemaType: EnumType[simulation.TimeSystem.Value] =
     EnumType (
       "TimeSystemEnum",
       Some("Time system."),

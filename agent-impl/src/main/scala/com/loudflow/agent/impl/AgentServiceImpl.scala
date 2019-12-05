@@ -17,6 +17,7 @@ package com.loudflow.agent.impl
 
 import java.util.UUID
 
+import akka.actor.ActorSystem
 import akka.persistence.query.Offset
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -34,20 +35,19 @@ import com.loudflow.agent.api.AgentService
 import com.loudflow.domain.agent.AgentProperties
 import com.loudflow.domain.model.graph.GraphModelState
 import com.loudflow.service.{Command, GraphQLRequest, HealthResponse}
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import play.api.libs.json.{Format, JsObject, JsValue, Json}
 import sangria.execution.{ErrorWithResolver, Executor, QueryAnalysisError}
 import sangria.parser.QueryParser
 import sangria.schema.{Argument, Field, ObjectType, Schema, StringType, fields}
 import sangria.marshalling.playJson._
+import com.typesafe.scalalogging.Logger
 
 import scala.collection.immutable
 import scala.util.{Failure, Success}
 
-class AgentServiceImpl(modelService: ModelService, persistentEntityRegistry: PersistentEntityRegistry)(implicit ec: ExecutionContext) extends AgentService {
+class AgentServiceImpl(modelService: ModelService, persistentEntityRegistry: PersistentEntityRegistry, system: ActorSystem)(implicit ec: ExecutionContext) extends AgentService {
 
-  private final val log = LoggerFactory.getLogger(classOf[AgentServiceImpl])
+  private final val log = Logger[AgentServiceImpl]
 
   modelService.changeTopic.subscribe.atLeastOnce(
     Flow.fromFunction(change => {

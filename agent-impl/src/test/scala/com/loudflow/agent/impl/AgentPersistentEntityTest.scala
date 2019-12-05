@@ -54,7 +54,7 @@ class AgentPersistentEntityTest(implicit ec: ExecutionContext) extends WordSpecL
 
     "handle CreateAgent command" in {
       val id = UUID.randomUUID().toString
-      val driver = new PersistentEntityTestDriver(system, new AgentPersistentEntity(), id)
+      val driver = new PersistentEntityTestDriver(system, new AgentPersistentEntity(registry, system), id)
       val created = driver.run(CreateAgent(traceId, agentProperties, modelProperties))
       log.debug(s"CREATED: ${created.replies}")
       created.replies should be(Seq(CommandReply(id, traceId, "CreateAgent")))

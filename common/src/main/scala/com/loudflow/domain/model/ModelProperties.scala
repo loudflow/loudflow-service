@@ -15,16 +15,18 @@
 ************************************************************************ */
 package com.loudflow.domain.model
 
+import com.loudflow.domain.model
 import com.loudflow.domain.model.entity.EntityProperties
-import com.loudflow.util.JavaRandom
 import play.api.libs.json._
-import sangria.schema.{BooleanType, EnumType, EnumValue, Field, InputField, InputObjectType, IntType, ListInputType, ListType, LongType, ObjectType, OptionInputType, OptionType, fields}
+import sangria.schema._
+import com.loudflow.util
+import sangria.marshalling.ScalaInput.scalaInput
 
 final case class ModelProperties
 (
   modelType: ModelType.Value,
   graph: Option[GraphProperties] = None,
-  seed: Long = JavaRandom.seedUniquifier ^ System.nanoTime,
+  seed: Long = util.randomSeed,
   entities: Set[EntityProperties] = Set.empty
 ) {
   require(modelType == ModelType.GRAPH && graph.isDefined, "Invalid argument 'graph' for ModelProperties.")
@@ -33,7 +35,7 @@ final case class ModelProperties
 
 object ModelProperties {
   implicit val format: Format[ModelProperties] = Json.format
-  val SchemaType =
+  val SchemaType: ObjectType[Unit, ModelProperties] =
     ObjectType (
       "ModelPropertiesType",
       "Model properties.",
@@ -51,8 +53,8 @@ object ModelProperties {
       List(
         InputField("modelType", ModelType.ModelTypeEnum, "Type of model."),
         InputField("graph", OptionInputType(GraphProperties.SchemaInputType), "Graph properties for model."),
-        InputField("seed", LongType, "Random number generator seed for the model."),
-        InputField("entities", ListInputType(EntityProperties.SchemaInputType), "List of entity properties for each entity kind used in the model.")
+        InputField("seed", LongType, "Random number generator seed for the model.", defaultValue = util.randomSeed),
+        InputField("entities", ListInputType(EntityProperties.SchemaInputType), "List of entity properties for each entity kind used in the model.", defaultValue = scalaInput(List.empty))
       )
     )
 }
@@ -61,7 +63,7 @@ object ModelType extends Enumeration {
   type ModelType = Value
   val GRAPH: ModelType.Value = Value
   implicit val format: Format[ModelType.Value] = Json.formatEnum(this)
-  val ModelTypeEnum =
+  val ModelTypeEnum: EnumType[model.ModelType.Value] =
     EnumType (
       "ModelTypeEnum",
       Some("Type of model."),
@@ -74,7 +76,7 @@ object ModelType extends Enumeration {
 final case class GraphProperties(grid: Option[GridProperties])
 object GraphProperties {
   implicit val format: Format[GraphProperties] = Json.format
-  val SchemaType =
+  val SchemaType: ObjectType[Unit, GraphProperties] =
     ObjectType (
       "GraphPropertiesType",
       "Properties for defining a graph-based model.",
@@ -99,7 +101,7 @@ final case class GridProperties(rows: Int, cols: Int, layers: Int = 0, cardinalO
 }
 object GridProperties {
   implicit val format: Format[GridProperties] = Json.format
-  val SchemaType =
+  val SchemaType: ObjectType[Unit, GridProperties] =
     ObjectType (
       "GridPropertiesType",
       "Properties for defining a graph-based model with grid-based positions.",
@@ -117,8 +119,8 @@ object GridProperties {
       List(
         InputField("rows", IntType, "Number of rows in grid."),
         InputField("cols", IntType, "Number of columns in grid."),
-        InputField("layers", IntType, "Number of layers if 3D grid."),
-        InputField("cardinalOnly", BooleanType, "Flag for connecting grid positions in cardinal directions only.")
+        InputField("layers", IntType, "Number of layers if 3D grid.", defaultValue = 0),
+        InputField("cardinalOnly", BooleanType, "Flag for connecting grid positions in cardinal directions only.", defaultValue = true)
       )
     )
 }

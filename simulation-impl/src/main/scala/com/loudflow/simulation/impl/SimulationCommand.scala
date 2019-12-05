@@ -116,7 +116,7 @@ object SimulationCommand {
   final case class ReadReply(id: String, traceId: String, state: SimulationState)
   object ReadReply { implicit val format: Format[ReadReply] = Json.format }
 
-  val ReadReplyType =
+  val ReadReplyType: ObjectType[Unit, ReadReply] =
     ObjectType (
       "ReadReplyType",
       "Read command reply.",

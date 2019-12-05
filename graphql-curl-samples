@@ -1,0 +1,24 @@
+
+# CREATE MODEL
+
+curl \
+  -X POST \
+  -H "Content-Type: application/json" \
+  --data '{ "query": "mutation { create(properties: {modelType:GRAPH, graph:{grid:{rows:10,cols:10}}}) {id command} }" }' \
+  http://localhost:9000/api/v1/model/graphql
+
+# READ MODEL
+
+curl \
+  -X POST \
+  -H "Content-Type: application/json" \
+  --data '{ "query": "query { read(id: <id returned by create mutation>) {id state{id seed}} }" }' \
+  http://localhost:9000/api/v1/model/graphql
+
+# DESTROY MODEL
+
+curl \
+  -X POST \
+  -H "Content-Type: application/json" \
+  --data '{ "query": "mutation { destroy(id: <id returned by create mutation>) {id command} }" }' \
+  http://localhost:9000/api/v1/model/graphql

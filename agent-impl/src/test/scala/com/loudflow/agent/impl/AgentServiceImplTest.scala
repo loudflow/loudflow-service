@@ -52,7 +52,7 @@ class AgentServiceImplTest extends AsyncWordSpec with Matchers with BeforeAndAft
   private val variables = s"""{"agent": $stringifiedAgentProperties, "model": $stringifiedModelProperties}"""
   log.debug(s"CREATE QUERY: $createMutation")
   log.debug(s"VARIABLES: $variables")
-  private val createRequest = GraphQLRequest(createMutation, None, Some(variables))
+  // private val createRequest = GraphQLRequest(createMutation, None, Some(variables))
 
   protected override def afterAll(): Unit = server.stop()
 

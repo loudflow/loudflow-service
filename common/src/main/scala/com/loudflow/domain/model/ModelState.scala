@@ -50,7 +50,7 @@ object ModelState {
     jsValue.transform(JsPath.json.update((JsPath \ 'demuxer).json.put(JsString(demuxer)))).get
   }
 
-  val SchemaType =
+  val SchemaType: InterfaceType[Unit, ModelState] =
     InterfaceType (
       "ModelStateType",
       "Model state.",

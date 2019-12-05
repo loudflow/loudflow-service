@@ -27,7 +27,7 @@ object Command {
   final case class CommandReply(id: String, traceId: String, command: String)
   object CommandReply { implicit val format: Format[CommandReply] = Json.format }
 
-  val CommandReplyType =
+  val CommandReplyType: ObjectType[Unit, CommandReply] =
     ObjectType (
       "CommandReplyType",
       "Command accepted reply.",

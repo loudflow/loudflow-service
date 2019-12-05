@@ -15,6 +15,7 @@
 ************************************************************************ */
 package com.loudflow.domain.agent
 
+import com.loudflow.domain.agent
 import play.api.libs.json._
 import com.loudflow.util.randomSeed
 import sangria.schema.{EnumType, EnumValue, Field, InputField, InputObjectType, IntType, LongType, ObjectType, fields}
@@ -24,7 +25,7 @@ final case class AgentProperties(agentType: AgentType.Value, seed: Long = random
 }
 object AgentProperties {
   implicit val format: Format[AgentProperties] = Json.format
-  val SchemaType =
+  val SchemaType: ObjectType[Unit, AgentProperties] =
     ObjectType (
       "AgentPropertiesType",
       "Agent properties.",
@@ -50,7 +51,7 @@ object AgentType extends Enumeration {
   type AgentType = Value
   val RANDOM: AgentType.Value = Value
   implicit val format: Format[AgentType.Value] = Json.formatEnum(this)
-  val SchemaType =
+  val SchemaType: EnumType[agent.AgentType.Value] =
     EnumType (
       "AgentTypeEnum",
       Some("Agent type."),

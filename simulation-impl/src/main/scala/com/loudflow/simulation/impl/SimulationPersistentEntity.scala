@@ -26,10 +26,10 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.{Duration, MILLISECONDS}
 import com.typesafe.scalalogging.Logger
 
-class SimulationPersistentEntity()(implicit val persistentEntityRegistry: PersistentEntityRegistry, val system: ActorSystem, val ec: ExecutionContext) extends PersistentEntity {
+class SimulationPersistentEntity(persistentEntityRegistry: PersistentEntityRegistry, system: ActorSystem)(implicit ec: ExecutionContext) extends PersistentEntity {
 
   final val log = Logger[SimulationPersistentEntity]
-  private final val ref: PersistentEntityRef[SimulationCommand] = persistentEntityRegistry.refFor[SimulationPersistentEntity](entityId)
+  private lazy val ref: PersistentEntityRef[SimulationCommand] = persistentEntityRegistry.refFor[SimulationPersistentEntity](entityId)
   private var clock: Option[Cancellable] = None
 
   override type Command = SimulationCommand

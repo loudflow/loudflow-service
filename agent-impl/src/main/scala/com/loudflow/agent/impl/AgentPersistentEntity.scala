@@ -26,10 +26,10 @@ import com.typesafe.scalalogging.Logger
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.{Duration, MILLISECONDS}
 
-class AgentPersistentEntity(implicit val persistentEntityRegistry: PersistentEntityRegistry, val system: ActorSystem, val ec: ExecutionContext) extends PersistentEntity {
+class AgentPersistentEntity(persistentEntityRegistry: PersistentEntityRegistry, system: ActorSystem)(implicit ec: ExecutionContext) extends PersistentEntity {
 
   final val log = Logger[AgentPersistentEntity]
-  private final val ref: PersistentEntityRef[AgentCommand] = persistentEntityRegistry.refFor[AgentPersistentEntity](entityId)
+  private lazy val ref: PersistentEntityRef[AgentCommand] = persistentEntityRegistry.refFor[AgentPersistentEntity](entityId)
   private var clock: Option[Cancellable] = None
 
   override type Command = AgentCommand

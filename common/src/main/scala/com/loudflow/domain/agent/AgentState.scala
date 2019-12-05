@@ -27,7 +27,7 @@ final case class AgentState(properties: AgentProperties, seed: Long, model: Mode
 }
 object AgentState {
   implicit val format: Format[AgentState] = Json.format
-  val SchemaType =
+  val SchemaType: ObjectType[Unit, AgentState] =
     ObjectType (
       "AgentStateType",
       "Agent state.",

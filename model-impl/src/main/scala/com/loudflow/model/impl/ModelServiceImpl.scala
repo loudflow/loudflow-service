@@ -29,8 +29,6 @@ import com.lightbend.lagom.scaladsl.persistence.{EventStreamElement, PersistentE
 import com.lightbend.lagom.scaladsl.server.ServerServiceCall
 import com.loudflow.domain.model.graph.GraphModelState
 import com.loudflow.service.{Command, GraphQLRequest, HealthResponse}
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import com.loudflow.model.api.ModelService
 import com.loudflow.simulation.api.SimulationService
 import play.api.libs.json.{Format, JsObject, JsValue, Json}
@@ -38,14 +36,13 @@ import sangria.execution.{ErrorWithResolver, Executor, QueryAnalysisError}
 import sangria.parser.QueryParser
 import sangria.schema._
 import sangria.marshalling.playJson._
+import com.typesafe.scalalogging.Logger
 
 import scala.util.{Failure, Success}
 
 class ModelServiceImpl(simulationService: SimulationService, persistentEntityRegistry: PersistentEntityRegistry)(implicit ec: ExecutionContext) extends ModelService {
 
-  private final val log = LoggerFactory.getLogger(classOf[ModelServiceImpl])
-
-  persistentEntityRegistry.register(new ModelPersistentEntity)
+  private final val log = Logger[ModelServiceImpl]
 
   simulationService.actionTopic.subscribe.atLeastOnce(
     Flow.fromFunction(action => {

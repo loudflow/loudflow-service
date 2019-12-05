@@ -16,7 +16,7 @@
 package com.loudflow.agent.impl
 
 import play.api.libs.ws.ahc.AhcWSComponents
-import com.lightbend.lagom.scaladsl.api.ServiceLocator
+import com.lightbend.lagom.scaladsl.api.{Descriptor, ServiceLocator}
 import com.lightbend.lagom.scaladsl.api.ServiceLocator.NoServiceLocator
 import com.loudflow.exception.ServiceExceptionSerializer
 import com.lightbend.lagom.scaladsl.persistence.cassandra.CassandraPersistenceComponents
@@ -34,7 +34,7 @@ class AgentLoader extends LagomApplicationLoader {
     override def serviceLocator: ServiceLocator = NoServiceLocator
   }
   override def loadDevMode(context: LagomApplicationContext): LagomApplication = new AgentApplication(context) with LagomDevModeComponents
-  override def describeService = Some(readDescriptor[AgentService])
+  override def describeService: Option[Descriptor] = Some(readDescriptor[AgentService])
 
 }
 
@@ -45,5 +45,7 @@ abstract class AgentApplication(context: LagomApplicationContext) extends LagomA
   override lazy val defaultExceptionSerializer = new ServiceExceptionSerializer(environment)
 
   lazy val modelService: ModelService = serviceClient.implement[ModelService]
+
+  persistentEntityRegistry.register(wire[AgentPersistentEntity])
 
 }

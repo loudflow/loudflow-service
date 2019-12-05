@@ -15,7 +15,7 @@
 ************************************************************************ */
 package com.loudflow.domain.model.entity
 
-import com.loudflow.domain.model.Position
+import com.loudflow.domain.model.{Position, entity}
 import com.loudflow.util.IntSpan
 import play.api.libs.json._
 import sangria.schema.{BooleanType, EnumType, EnumValue, Field, InputField, InputObjectType, IntType, ListInputType, ListType, ObjectType, OptionInputType, OptionType, StringType, fields}
@@ -37,7 +37,7 @@ final case class EntityProperties
 }
 object EntityProperties {
   implicit val format: Format[EntityProperties] = Json.format
-  val SchemaType =
+  val SchemaType: ObjectType[Unit, EntityProperties] =
     ObjectType (
       "EntityPropertiesType",
       "Entity properties.",
@@ -76,7 +76,7 @@ object EntityCategory extends Enumeration {
   val AGENT: EntityCategory.Value = Value
   val THING: EntityCategory.Value = Value
   implicit val format: Format[EntityCategory.Value] = Json.formatEnum(this)
-  val SchemaType =
+  val SchemaType: EnumType[entity.EntityCategory.Value] =
     EnumType (
       "EntityCategoryEnum",
       Some("Entity category."),
@@ -93,7 +93,7 @@ final case class PopulationProperties(range: IntSpan, growth: Option[Int], lifeS
 }
 object PopulationProperties {
   implicit val format: Format[PopulationProperties] = Json.format
-  val SchemaType =
+  val SchemaType: ObjectType[Unit, PopulationProperties] =
     ObjectType (
       "PopulationPropertiesType",
       "Properties for population control in model.",
@@ -122,7 +122,7 @@ final case class ClusterProperties(size: IntSpan = IntSpan(0, 0), step: Int = 0,
 }
 object ClusterProperties {
   implicit val format: Format[ClusterProperties] = Json.format
-  val SchemaType =
+  val SchemaType: ObjectType[Unit, ClusterProperties] =
     ObjectType (
       "ClusterPropertiesType",
       "Properties for defining entity clusters.",
@@ -153,7 +153,7 @@ final case class MotionProperties(distance: Int) {
 }
 object MotionProperties {
   implicit val format: Format[MotionProperties] = Json.format
-  val SchemaType =
+  val SchemaType: ObjectType[Unit, MotionProperties] =
     ObjectType (
       "MotionPropertiesType",
       "Properties for defining motion behavior of entity.",
@@ -176,7 +176,7 @@ final case class ProximityProperties(kind: String, distance: Int) {
 }
 object ProximityProperties {
   implicit val format: Format[ProximityProperties] = Json.format
-  val SchemaType =
+  val SchemaType: ObjectType[Unit, ProximityProperties] =
     ObjectType (
       "ProximityPropertiesType",
       "Properties for defining proximity behavior of entity.",
@@ -199,7 +199,7 @@ object ProximityProperties {
 final case class InteractionProperties(target: Participant, trigger: Option[Participant], result: InteractionResult.Value = InteractionResult.BLOCK_ACTOR, score: Option[Int] = None, scoreDecayRate: Option[Int] = None)
 object InteractionProperties {
   implicit val format: Format[InteractionProperties] = Json.format
-  val SchemaType =
+  val SchemaType: ObjectType[Unit, InteractionProperties] =
     ObjectType (
       "InteractionPropertiesType",
       "Properties for defining entity-to-entity interaction behavior.",
@@ -228,7 +228,7 @@ object InteractionProperties {
 final case class Participant(kind: String, score: Option[Int], scoreDecayRate: Option[Int])
 object Participant {
   implicit val format: Format[Participant] = Json.format
-  val SchemaType =
+  val SchemaType: ObjectType[Unit, Participant] =
     ObjectType (
       "ParticipantType",
       "Properties for defining interaction behavior of a participant entity.",
@@ -259,7 +259,7 @@ object InteractionResult extends Enumeration {
   val REMOVE_TARGET: InteractionResult.Value = Value
   val REMOVE_BOTH: InteractionResult.Value = Value
   implicit val format: Format[InteractionResult.Value] = Json.formatEnum(this)
-  val SchemaType =
+  val SchemaType: EnumType[entity.InteractionResult.Value] =
     EnumType (
       "InteractionResultEnum",
       Some("Result of interaction."),

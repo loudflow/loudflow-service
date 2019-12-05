@@ -17,6 +17,7 @@ package com.loudflow.simulation.impl
 
 import java.util.UUID
 
+import akka.actor.ActorSystem
 import akka.persistence.query.Offset
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -44,7 +45,7 @@ import scala.collection.immutable
 import scala.util.{Failure, Success}
 import com.typesafe.scalalogging.Logger
 
-class SimulationServiceImpl(modelService: ModelService, persistentEntityRegistry: PersistentEntityRegistry)(implicit ec: ExecutionContext) extends SimulationService {
+class SimulationServiceImpl(modelService: ModelService, persistentEntityRegistry: PersistentEntityRegistry, system: ActorSystem)(implicit ec: ExecutionContext) extends SimulationService {
 
   private final val log = Logger[SimulationServiceImpl]
 

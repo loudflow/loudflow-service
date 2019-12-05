@@ -101,7 +101,7 @@ object Entity {
 
   def recoverClusterPoint(position: Position, center: Position): Position = Position(position.x - center.x, position.y - center.y, position.z - center.z)
 
-  val SchemaType =
+  val SchemaType: ObjectType[Unit, Entity] =
     ObjectType (
       "EntityType",
       "Data structure defining an entity.",
@@ -125,7 +125,7 @@ object EntityOptions {
     val lifeSpan = properties.population.lifeSpanRange.map(_.pick(random))
     EntityOptions(cluster, group, lifeSpan)
   }
-  val SchemaType =
+  val SchemaType: ObjectType[Unit, EntityOptions] =
     ObjectType (
       "EntityOptionsType",
       "Data structure defining entity options.",
