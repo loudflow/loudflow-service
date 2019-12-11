@@ -7,7 +7,7 @@
 
 <!-- PROJECT LOGO -->
 <p align="center">
-    <a href="https://loudflow.github.io/">
+    <a href="https://www.loudflow.com/">
         <img src="images/logo.png" alt="Logo" height="150">
     </a>
     <p align="center">
@@ -16,7 +16,7 @@
         <a href="https://github.com/loudflow/loudflow-service/wiki"><strong>Explore the docs »</strong></a>
         <br />
         <br />
-        <a href="https://loudflow.github.io/">View Demo</a>
+        <a href="https://www.loudflow.com/">View Demo</a>
         ·
         <a href="https://github.com/loudflow/loudflow-service/issues">Report Bug</a>
         ·
@@ -40,7 +40,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-[![Architecture][architecture]](https://loudflow.github.io/)
+[![Architecture][architecture]](https://www.loudflow.com/)
 
 This project is under construction and not ready for usage. Please stay tuned for updates. 
 
